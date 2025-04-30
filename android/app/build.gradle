@@ -1,0 +1,49 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin" // Flutter en sonda kalmalı
+}
+
+android {
+    namespace = "com.example.alarm"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        applicationId = "com.example.alarm"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs += ["-Xlint:-options", "-Xlint:-deprecation", "-Xlint:-unchecked"]
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.debug
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.6.1"     // 👈 AppCompatActivity için
+    implementation "androidx.core:core-ktx:1.10.1"           // 👈 Kotlin Android Extensions
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // 👈 Java 8+ API'ler
+}
