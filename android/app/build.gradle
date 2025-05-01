@@ -1,7 +1,8 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    id "dev.flutter.flutter-gradle-plugin" // Flutter en sonda kalmalı
+    // Flutter pluginini sonda bırakmak iyi bir pratiktir
+    id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
@@ -12,6 +13,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        // Java 8+ API'lerini eski Android sürümlerinde kullanmak için desugaring etkinleştir
         coreLibraryDesugaringEnabled true
     }
 
@@ -25,25 +27,43 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // MultiDex genellikle Flutter projelerinde varsayılan olarak etkindir,
+        // ama gerekirse eklenebilir: multiDexEnabled true
     }
 
+    // Lint uyarılarını bastırmak için (opsiyonel)
     tasks.withType(JavaCompile).configureEach {
         options.compilerArgs += ["-Xlint:-options", "-Xlint:-deprecation", "-Xlint:-unchecked"]
     }
 
     buildTypes {
         release {
+            // TODO: Yayınlama için uygun imzalama yapılandırmasını ayarla
             signingConfig = signingConfigs.debug
+            // minifyEnabled true // Kod küçültme (opsiyonel)
+            // shrinkResources true // Kullanılmayan kaynakları kaldırma (opsiyonel)
+            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' // ProGuard kuralları
         }
     }
 }
 
+// Flutter projesinin kök dizinini belirtir
 flutter {
     source = "../.."
 }
 
+// Bağımlılıklar
 dependencies {
-    implementation "androidx.appcompat:appcompat:1.6.1"     // 👈 AppCompatActivity için
-    implementation "androidx.core:core-ktx:1.10.1"           // 👈 Kotlin Android Extensions
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // 👈 Java 8+ API'ler
+    // Standart AndroidX kütüphaneleri
+    implementation "androidx.appcompat:appcompat:1.6.1"     // AppCompatActivity ve temalar için
+    implementation "androidx.core:core-ktx:1.10.1"           // Kotlin çekirdek uzantıları
+
+    // ---> ConstraintLayout Kütüphanesi (Layout için eklendi) <---
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4" // Stabil versiyon 2.2.1 son sürüm
+
+    // ---> Core Library Desugaring Bağımlılığı (compileOptions'daki ayar için gerekli) <---
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // veya daha güncel bir versiyon
+
+    // Flutter ve plugin bağımlılıkları otomatik olarak eklenir
+    // implementation "..." // Diğer native bağımlılıklar buraya eklenebilir
 }
