@@ -1,36 +1,34 @@
-// lib/main.dart
+// ────────────────────────────────────────────────────────────────────────
+// main.dart    →  void main()’DEN ÖNCEKİ TAM KISIM
+// ────────────────────────────────────────────────────────────────────────
+
+// ——— Dart / Flutter —
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
 import 'dart:io' show Platform;
 
-import 'package:android_intent_plus/flag.dart';
+import 'package:flutter/foundation.dart';           // debugPrint
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';             // MethodChannel
 
-import 'alarm_ring_screen.dart';
-import 'alarm_model.dart';
-import 'alarm_storage.dart';
-import 'package:android_intent_plus/android_intent.dart'; // Bunu unutma
-
-// lib/main.dart  ( main()’den ÖNCE )
-import 'dart:io' show Platform;
-import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:intl/intl.dart';
+// ——— Üçüncü-taraf paketler —
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:intl/intl.dart';
 
+// ——— Uygulama dosyaları —
 import 'alarm_model.dart';
 import 'alarm_storage.dart';
+import 'permission_helper.dart';           // /permissions ekranı için
+import 'permission_screen.dart';
+import 'alarm_ring_screen.dart';
 
-// ───────── Bildirim/kanal sabitleri ─────────
+// ───────── Bildirim / kanal sabitleri ─────────
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
 
@@ -38,33 +36,41 @@ const String alarmChannelId   = 'alarm_channel_id';
 const String alarmChannelName = 'Alarm Notifications';
 const String alarmChannelDesc = 'Channel for Alarm notifications';
 
-// ───────── Alarm tetikleyici (background) ─────────
+/// 🔔  (Kotlin tarafına mesaj göndermek istersen hazır)
+const MethodChannel _nativeChannel =
+MethodChannel('com.example.alarm/native');
+
+// ───────── Alarm callback (background isolate) ─────────
 @pragma('vm:entry-point')
 void alarmCallback() async {
-  print('[AlarmCallback] triggered');
+  debugPrint('[AlarmCallback] triggered');
 
   final alarms = await AlarmStorage.loadAlarms();
   final now    = DateTime.now();
-  AlarmInfo? current;
-  Duration minDiff = const Duration(days: 365);
 
+  AlarmInfo? current;
+  Duration   minDiff = const Duration(days: 365);
+
+  // En yakın (±2 dk) aktif alarmı bul
   for (final a in alarms.where((e) => e.isActive)) {
     final diff = now.difference(a.dateTime).abs();
     if (diff < const Duration(minutes: 2) && diff < minDiff) {
-      minDiff  = diff;
-      current  = a;
+      minDiff = diff;
+      current = a;
     }
   }
 
-  // ── Ekranı AÇ ──────────────────────────────
+  // ➜ Tam-ekran aktiviteyi aç
   await _launchRingActivity(current?.id ?? -1);
 
-  // ── Tekrarlı alarmları yeniden kur ─────────
+  // ↻  Tekrarlıysa bir sonrakini kur
   if (current != null && current.repeatDays.isNotEmpty) {
-    final next = current.calculateNextAlarmTime(
-        now.add(const Duration(minutes: 1)));
+    final next =
+    current.calculateNextAlarmTime(now.add(const Duration(minutes: 1)));
+
     if (next != current.dateTime) {
       current.dateTime = next;
+
       await AndroidAlarmManager.oneShotAt(
         next,
         current.id,
@@ -77,37 +83,40 @@ void alarmCallback() async {
       await AlarmStorage.updateAlarm(current);
     }
   } else if (current != null) {
+    // Tek-seferlik: pasifleştir
     current.isActive = false;
     await AlarmStorage.updateAlarm(current);
   }
 }
 
-// ───────── Tam-ekran aktiviteyi başlat ─────────
+/// ───────── Tam-ekran AlarmRingActivity’yi başlat ─────────
 Future<void> _launchRingActivity(int alarmId) async {
-  if (!Platform.isAndroid) return;
+  if (!Platform.isAndroid) return; // iOS/Web’de yok say
 
+  const String pkg = 'com.example.alarm'; // ← kendi paket adın
   try {
     final intent = AndroidIntent(
-      action:       'android.intent.action.RUN',
-      package:      'com.example.alarm',                 // paket adın
-      componentName:'com.example.alarm/.AlarmRingActivity',
+      action: 'android.intent.action.RUN',
+      package: pkg,
+      componentName: '$pkg.AlarmRingActivity',
+
+      arguments: {'id': alarmId.toString()},
       flags: <int>[
         Flag.FLAG_ACTIVITY_NEW_TASK,
         Flag.FLAG_ACTIVITY_SINGLE_TOP,
       ],
-      arguments:    {'id': alarmId.toString()},
     );
     await intent.launch();
-  } catch (e) {
-    print('❗ AlarmRingActivity başlatılamadı: $e');
-    // ← fallback: showAlarmNotification(null);
+  } catch (e, s) {
+    debugPrint('🚨 AlarmRingActivity başlatılamadı → $e\n$s');
   }
 }
 
-// (Opsiyonel) aynı kanalı kaydetmek istersen:
+/// (Opsiyonel) bildirim kanalı oluştur
 Future<void> _configureNotificationChannel() async {
   const android = AndroidNotificationChannel(
-    alarmChannelId, alarmChannelName,
+    alarmChannelId,
+    alarmChannelName,
     description: alarmChannelDesc,
     importance: Importance.max,
   );
@@ -117,28 +126,30 @@ Future<void> _configureNotificationChannel() async {
       ?.createNotificationChannel(android);
 }
 
-// ───────── main() ─────────
+// ─────────────────────  buradan sonrası sizin mevcut  main()  fonksiyonunuz  ─────────────────────
+
+
+
+
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+
+
+
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> requestBatteryOptimizationException() async {
-    if (await Permission.ignoreBatteryOptimizations.isDenied) {
-      final opened = await openAppSettings(); // Ayarlara yönlendir
-      if (!opened) {
-        print("Kullanıcı ayarları açmadı.");
-      }
-    }
-  }
-  await requestBatteryOptimizationException();
-
-  // Bildirimden mi açıldı?
+  // Bildirimden mi açıldı kontrolü
   final launch = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
   final openedViaNotif = launch?.didNotificationLaunchApp ?? false;
   final payload = launch?.notificationResponse?.payload;
 
-  // Bildirim plugin’i
+  // Bildirim yapılandırması
   const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
   const init = InitializationSettings(android: initAndroid);
+
   await flutterLocalNotificationsPlugin.initialize(
     init,
     onDidReceiveNotificationResponse: (resp) {
@@ -149,7 +160,7 @@ Future<void> main() async {
     },
   );
 
-  // İzinler
+  // Bildirim & alarm izinleri (Android 13+ için önerilir)
   if (Platform.isAndroid) {
     final android = flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -157,19 +168,36 @@ Future<void> main() async {
     await android?.requestNotificationsPermission();
   }
 
+  // Kritik sistem izinleri kontrolü
+  final batteryGranted = await Permission.ignoreBatteryOptimizations.isGranted;
+  final overlayGranted = await Permission.systemAlertWindow.isGranted;
+  final allCriticalPermissionsGranted = batteryGranted && overlayGranted;
+
+  // Alarm servisini başlat
   await AndroidAlarmManager.initialize();
 
-  runApp(MyApp(
-    initialRoute: openedViaNotif ? '/ring' : '/',
-    alarmPayload: payload,
-  ));
+  // Uygulama başlat
+  runApp(
+    MyApp(
+      initialRoute: allCriticalPermissionsGranted
+          ? (openedViaNotif ? '/ring' : '/')
+          : '/permissions', // Eğer izinler eksikse özel ekran
+      alarmPayload: payload,
+    ),
+  );
 }
 
-// ───────── MyApp ─────────
-final navigatorKey = GlobalKey<NavigatorState>();
+
+
+
+
+
+
+//MYAPPP
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.initialRoute, this.alarmPayload});
+
   final String initialRoute;
   final String? alarmPayload;
 
@@ -190,11 +218,24 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      initialRoute: initialRoute,
+      // 🟡 her zaman '/' ile başla, sonra yönlendir
+      initialRoute: '/',
       routes: {
         '/': (_) => const AlarmHomePage(),
-        '/ring': (_) =>
-            AlarmRingScreen(alarmId: int.tryParse(alarmPayload ?? '-1') ?? -1),
+        '/permissions': (_) => const PermissionScreen(), // Varsa
+      },
+      onGenerateRoute: (settings) {
+        // /ring?id=123 gibi bir yol geldiyse...
+        if (settings.name?.startsWith('/ring') == true) {
+          final uri = Uri.parse(settings.name!);
+          final idParam = uri.queryParameters['id'] ?? alarmPayload ?? '-1';
+          final alarmId = int.tryParse(idParam) ?? -1;
+
+          return MaterialPageRoute(
+            builder: (_) => AlarmRingScreen(alarmId: alarmId),
+          );
+        }
+        return null;
       },
     );
   }
@@ -202,8 +243,6 @@ class MyApp extends StatelessWidget {
 
 // ───────── Kalan kod (AlarmHomePage, _AlarmEditDialog, vs.) ─────────
 // Senin mevcut kodun değişmeden aşağıda durabilir.
-
-
 
 // --- Ana Sayfa Widget'ı (Stateful) ---
 class AlarmHomePage extends StatefulWidget {
@@ -225,7 +264,9 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
   }
 
   Future<void> _loadAlarmsAndReschedule() async {
-    setState(() { _isLoading = true; });
+    setState(() {
+      _isLoading = true;
+    });
     _alarms = await AlarmStorage.loadAlarms();
     final now = DateTime.now();
     bool needsSave = false;
@@ -250,14 +291,15 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     // Tüm sistem alarmı kurma/iptal etme işlemleri bitsin
     await Future.wait(scheduleFutures);
 
-
     if (needsSave) {
       await AlarmStorage.saveAlarms(_alarms);
     }
 
     _alarms.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     if (mounted) {
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
     }
     print("Alarmlar yüklendi ve aktif olanlar (tekrar) kuruldu.");
   }
@@ -277,12 +319,13 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     final now = DateTime.now();
     // Dialogdan gelen sadece saat bilgisini içeren dateTime'ı kullanarak,
     // doğru bir sonraki çalma zamanını hesapla.
-    alarm.dateTime = alarm.calculateNextAlarmTime(
-        DateTime(now.year, now.month, now.day, alarm.timeOfDay.hour, alarm.timeOfDay.minute));
+    alarm.dateTime = alarm.calculateNextAlarmTime(DateTime(now.year, now.month,
+        now.day, alarm.timeOfDay.hour, alarm.timeOfDay.minute));
 
     bool scheduled = await _scheduleSystemAlarm(alarm); // Sistemi kur/güncelle
 
-    if (scheduled || !alarm.isActive) { // Başarıyla kurulduysa veya zaten pasifse
+    if (scheduled || !alarm.isActive) {
+      // Başarıyla kurulduysa veya zaten pasifse
       int existingIndex = _alarms.indexWhere((a) => a.id == alarm.id);
       setState(() {
         if (existingIndex != -1) {
@@ -292,18 +335,22 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
           _alarms.add(alarm); // Yeni ekle
           print("Yeni alarm eklendi: ID ${alarm.id}");
         }
-        _alarms.sort((a, b) => a.dateTime.compareTo(b.dateTime)); // Her zaman sıralı tut
+        _alarms.sort(
+            (a, b) => a.dateTime.compareTo(b.dateTime)); // Her zaman sıralı tut
       });
       await AlarmStorage.saveAlarms(_alarms); // Değişikliği kaydet
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Alarm ${existingIndex != -1 ? 'güncellendi' : 'kuruldu'}.'),
+            content: Text(
+                'Alarm ${existingIndex != -1 ? 'güncellendi' : 'kuruldu'}.'),
             duration: Duration(seconds: 2)),
       );
     } else {
       print("Alarm (ID: ${alarm.id}) sisteme kurulamadı!");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Alarm sisteme kurulamadı! Lütfen izinleri kontrol edin.')),
+        const SnackBar(
+            content: Text(
+                'Alarm sisteme kurulamadı! Lütfen izinleri kontrol edin.')),
       );
     }
   }
@@ -315,7 +362,8 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     // Eğer pasif yapılıyorsa, sadece iptal et
     bool success = await _scheduleSystemAlarm(alarm); // Sistemi kur/iptal et
 
-    if (success || !isActive) { // Başarılıysa veya pasif yapıldıysa
+    if (success || !isActive) {
+      // Başarılıysa veya pasif yapıldıysa
       setState(() {}); // UI'ı güncelle (Switch durumu değişti)
       await AlarmStorage.updateAlarm(alarm); // Değişikliği kaydet
       print("Alarm (ID: ${alarm.id}) durumu güncellendi: $isActive");
@@ -328,7 +376,6 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
         const SnackBar(content: Text('Alarm aktif edilemedi!')),
       );
     }
-
   }
 
   // Sistemi kurma/iptal etme (refactor edildi)
@@ -336,7 +383,8 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     if (alarm.isActive) {
       // Aktifse, *hesaplanmış* bir sonraki zamana kur
       // calculateNextAlarmTime zaten doğru bir sonraki zamanı verir.
-      print("Sistem alarmı kuruluyor/güncelleniyor: ID ${alarm.id}, Time: ${alarm.dateTime}");
+      print(
+          "Sistem alarmı kuruluyor/güncelleniyor: ID ${alarm.id}, Time: ${alarm.dateTime}");
       return await AndroidAlarmManager.oneShotAt(
         alarm.dateTime,
         alarm.id,
@@ -356,7 +404,6 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     }
   }
 
-
   Future<void> _deleteAlarm(AlarmInfo alarm, int index) async {
     await AndroidAlarmManager.cancel(alarm.id); // Önce sistemden kaldır
     setState(() {
@@ -365,7 +412,8 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     await AlarmStorage.saveAlarms(_alarms); // Değişikliği kaydet
     print('Alarm (ID: ${alarm.id}) silindi.');
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Alarm silindi.'), duration: Duration(seconds: 2)),
+      const SnackBar(
+          content: Text('Alarm silindi.'), duration: Duration(seconds: 2)),
     );
   }
 
@@ -374,7 +422,8 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alarmlarım'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary, // AppBar rengi
+        backgroundColor:
+            Theme.of(context).colorScheme.inversePrimary, // AppBar rengi
         actions: [
           IconButton(
             icon: Icon(Icons.add_alarm),
@@ -386,116 +435,150 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _alarms.isEmpty
-          ? Center(
-          child: Column( // İkon ve metin ekleyelim
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.alarm_off, size: 80, color: Colors.grey[400]),
-              SizedBox(height: 16),
-              Text(
-                'Henüz alarm kurulmadı.\nEklemek için sağ üstteki + ikonuna dokunun.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-            ],
-          ))
-          : ListView.separated( // Daha iyi ayırma için Separated kullan
-        itemCount: _alarms.length,
-        separatorBuilder: (context, index) => Divider(height: 1, indent: 16, endIndent: 16), // Ayırıcı çizgi
-        itemBuilder: (context, index) {
-          final alarm = _alarms[index];
-          final now = DateTime.now();
-          // Sonraki çalma zamanını tekrar hesaplamaya gerek yok, yüklemede yapıldı.
-          final nextOccurrence = alarm.dateTime;
-          final isToday = now.year == nextOccurrence.year && now.month == nextOccurrence.month && now.day == nextOccurrence.day;
-          final isTomorrow = now.add(Duration(days: 1)).year == nextOccurrence.year && now.add(Duration(days: 1)).month == nextOccurrence.month && now.add(Duration(days: 1)).day == nextOccurrence.day;
-
-          String nextTimeString;
-          if (!alarm.isActive) {
-            nextTimeString = "Pasif";
-          }
-          else if (isToday) {
-            nextTimeString = 'Bugün ${DateFormat('HH:mm').format(nextOccurrence)}';
-          } else if (isTomorrow) {
-            nextTimeString = 'Yarın ${DateFormat('HH:mm').format(nextOccurrence)}';
-          } else {
-            nextTimeString = DateFormat('dd MMM E, HH:mm', 'tr_TR').format(nextOccurrence);
-          }
-
-          return ListTile(
-            contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // İç boşluk
-            leading: Icon(
-              alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
-              color: alarm.isActive ? Theme.of(context).colorScheme.primary : Colors.grey,
-              size: 30, // İkon boyutu
-            ),
-            title: Text(
-              DateFormat('HH:mm').format(alarm.dateTime),
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: alarm.isActive ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[500],
-                decoration: !alarm.isActive ? TextDecoration.lineThrough : null,
-                decorationColor: Colors.grey[500],
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (alarm.label != null && alarm.label!.isNotEmpty)
-                  Padding( // Etiket için biraz boşluk
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      alarm.label!,
-                      style: TextStyle(fontSize: 16, color: alarm.isActive ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey),
-                      overflow: TextOverflow.ellipsis,
+              ? Center(
+                  child: Column(
+                  // İkon ve metin ekleyelim
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.alarm_off, size: 80, color: Colors.grey[400]),
+                    SizedBox(height: 16),
+                    Text(
+                      'Henüz alarm kurulmadı.\nEklemek için sağ üstteki + ikonuna dokunun.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
-                  ),
-                Padding( // Alt metin için boşluk
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    '${alarm.repeatDaysText} | $nextTimeString',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
+                  ],
+                ))
+              : ListView.separated(
+                  // Daha iyi ayırma için Separated kullan
+                  itemCount: _alarms.length,
+                  separatorBuilder: (context, index) => Divider(
+                      height: 1, indent: 16, endIndent: 16), // Ayırıcı çizgi
+                  itemBuilder: (context, index) {
+                    final alarm = _alarms[index];
+                    final now = DateTime.now();
+                    // Sonraki çalma zamanını tekrar hesaplamaya gerek yok, yüklemede yapıldı.
+                    final nextOccurrence = alarm.dateTime;
+                    final isToday = now.year == nextOccurrence.year &&
+                        now.month == nextOccurrence.month &&
+                        now.day == nextOccurrence.day;
+                    final isTomorrow = now.add(Duration(days: 1)).year ==
+                            nextOccurrence.year &&
+                        now.add(Duration(days: 1)).month ==
+                            nextOccurrence.month &&
+                        now.add(Duration(days: 1)).day == nextOccurrence.day;
+
+                    String nextTimeString;
+                    if (!alarm.isActive) {
+                      nextTimeString = "Pasif";
+                    } else if (isToday) {
+                      nextTimeString =
+                          'Bugün ${DateFormat('HH:mm').format(nextOccurrence)}';
+                    } else if (isTomorrow) {
+                      nextTimeString =
+                          'Yarın ${DateFormat('HH:mm').format(nextOccurrence)}';
+                    } else {
+                      nextTimeString = DateFormat('dd MMM E, HH:mm', 'tr_TR')
+                          .format(nextOccurrence);
+                    }
+
+                    return ListTile(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      // İç boşluk
+                      leading: Icon(
+                        alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
+                        color: alarm.isActive
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey,
+                        size: 30, // İkon boyutu
+                      ),
+                      title: Text(
+                        DateFormat('HH:mm').format(alarm.dateTime),
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: alarm.isActive
+                              ? Theme.of(context).textTheme.bodyLarge?.color
+                              : Colors.grey[500],
+                          decoration: !alarm.isActive
+                              ? TextDecoration.lineThrough
+                              : null,
+                          decorationColor: Colors.grey[500],
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (alarm.label != null && alarm.label!.isNotEmpty)
+                            Padding(
+                              // Etiket için biraz boşluk
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                alarm.label!,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: alarm.isActive
+                                        ? Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                        : Colors.grey),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          Padding(
+                            // Alt metin için boşluk
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              '${alarm.repeatDaysText} | $nextTimeString',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: Switch(
+                        value: alarm.isActive,
+                        onChanged: (bool value) {
+                          _toggleAlarm(alarm, value);
+                        },
+                        activeColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      onTap: () =>
+                          _showAddEditAlarmDialog(existingAlarm: alarm),
+                      // Düzenle
+                      onLongPress: () async {
+                        // Silme onayı
+                        bool? confirmDelete = await showDialog<bool>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Alarmı Sil?'),
+                              content: Text(
+                                  'Bu alarmı (${DateFormat('HH:mm').format(alarm.dateTime)}${alarm.label != null && alarm.label!.isNotEmpty ? ' - ${alarm.label}' : ''}) kalıcı olarak silmek istediğinizden emin misiniz?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: Text('İPTAL'),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
+                                  child: Text('SİL',
+                                      style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (confirmDelete == true) {
+                          _deleteAlarm(alarm, index);
+                        }
+                      },
+                    );
+                  },
                 ),
-              ],
-            ),
-            trailing: Switch(
-              value: alarm.isActive,
-              onChanged: (bool value) {
-                _toggleAlarm(alarm, value);
-              },
-              activeColor: Theme.of(context).colorScheme.primary,
-            ),
-            onTap: () => _showAddEditAlarmDialog(existingAlarm: alarm), // Düzenle
-            onLongPress: () async { // Silme onayı
-              bool? confirmDelete = await showDialog<bool>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Alarmı Sil?'),
-                    content: Text(
-                        'Bu alarmı (${DateFormat('HH:mm').format(alarm.dateTime)}${alarm.label != null && alarm.label!.isNotEmpty ? ' - ${alarm.label}' : ''}) kalıcı olarak silmek istediğinizden emin misiniz?'),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('İPTAL'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text('SİL', style: TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  );
-                },
-              );
-              if (confirmDelete == true) {
-                _deleteAlarm(alarm, index);
-              }
-            },
-          );
-        },
-      ),
     );
   }
 }
@@ -519,8 +602,10 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _selectedTime = widget.initialAlarm?.timeOfDay ?? TimeOfDay.fromDateTime(now.add(Duration(minutes: 5)));
-    _labelController = TextEditingController(text: widget.initialAlarm?.label ?? '');
+    _selectedTime = widget.initialAlarm?.timeOfDay ??
+        TimeOfDay.fromDateTime(now.add(Duration(minutes: 5)));
+    _labelController =
+        TextEditingController(text: widget.initialAlarm?.label ?? '');
     _selectedDays = widget.initialAlarm?.repeatDays.toSet() ?? {};
   }
 
@@ -536,7 +621,8 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
       initialTime: _selectedTime,
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true), // 24 saat formatı
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          // 24 saat formatı
           child: child!,
         );
       },
@@ -552,26 +638,41 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
     final now = DateTime.now();
     // Dialogdan sadece saat bilgisini içeren bir DateTime oluştur.
     // Gerçek çalma zamanı _saveOrUpdateAlarm içinde hesaplanacak.
-    DateTime baseDateTimeWithSelectedTime = DateTime(now.year, now.month, now.day, _selectedTime.hour, _selectedTime.minute);
+    DateTime baseDateTimeWithSelectedTime = DateTime(
+        now.year, now.month, now.day, _selectedTime.hour, _selectedTime.minute);
 
     final alarmInfo = AlarmInfo(
       id: widget.initialAlarm?.id ?? await AlarmStorage.getNextAlarmId(),
-      dateTime: baseDateTimeWithSelectedTime, // Sadece saat bilgisi
+      dateTime: baseDateTimeWithSelectedTime,
+      // Sadece saat bilgisi
       label: _labelController.text.trim(),
       repeatDays: _selectedDays.toList()..sort(),
-      isActive: widget.initialAlarm?.isActive ?? true, // Eskisinden al veya varsayılan true
+      isActive: widget.initialAlarm?.isActive ??
+          true, // Eskisinden al veya varsayılan true
     );
     Navigator.of(context).pop(alarmInfo); // Dialogu kapat ve sonucu döndür
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    final List<String> dayNames = [
+      'Pzt',
+      'Sal',
+      'Çar',
+      'Per',
+      'Cum',
+      'Cmt',
+      'Paz'
+    ];
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
-      title: Center(child: Text(widget.initialAlarm == null ? 'Yeni Alarm Kur' : 'Alarmı Düzenle')),
-      contentPadding: EdgeInsets.all(16.0), // Kenar boşlukları
+      title: Center(
+          child: Text(widget.initialAlarm == null
+              ? 'Yeni Alarm Kur'
+              : 'Alarmı Düzenle')),
+      contentPadding: EdgeInsets.all(16.0),
+      // Kenar boşlukları
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -586,11 +687,13 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text(
                     // Saati 24 saat formatında göster
-                    MaterialLocalizations.of(context).formatTimeOfDay(_selectedTime, alwaysUse24HourFormat: true),
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                        _selectedTime,
+                        alwaysUse24HourFormat: true),
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                 ),
               ),
@@ -603,14 +706,17 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
                 labelText: 'Alarm Etiketi (Opsiyonel)',
                 // icon: Icon(Icons.label_outline), // İkon yerine prefixIcon
                 prefixIcon: Icon(Icons.label_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
               textCapitalization: TextCapitalization.sentences,
             ),
             SizedBox(height: 16),
             // Tekrarlama Günleri
-            Text('Tekrarlama Günleri:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Tekrarlama Günleri:',
+                style: Theme.of(context).textTheme.titleMedium),
             SizedBox(height: 8),
             Wrap(
               spacing: 8.0,
@@ -635,10 +741,15 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
                   labelStyle: TextStyle(
                       color: isSelected
                           ? Theme.of(context).colorScheme.onPrimaryContainer
-                          : isDarkMode ? Colors.white70 : Colors.black87 // Tema uyumlu renk
-                  ),
-                  visualDensity: VisualDensity.compact, // Daha kompakt görünüm
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), // Yuvarlak kenar
+                          : isDarkMode
+                              ? Colors.white70
+                              : Colors.black87 // Tema uyumlu renk
+                      ),
+                  visualDensity: VisualDensity.compact,
+                  // Daha kompakt görünüm
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(16)), // Yuvarlak kenar
                 );
               }),
             ),
@@ -649,12 +760,15 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
                 TextButton(
                   onPressed: () => setState(() => _selectedDays.clear()),
                   child: Text("Temizle"),
-                  style: TextButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 8)),
+                  style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 8)),
                 ),
                 TextButton(
-                  onPressed: () => setState(() => _selectedDays = Set.from(allWeekdays)),
+                  onPressed: () =>
+                      setState(() => _selectedDays = Set.from(allWeekdays)),
                   child: Text("Tümünü Seç"),
-                  style: TextButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 8)),
+                  style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 8)),
                 ),
               ],
             ),
@@ -662,23 +776,27 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
         ),
       ),
       actions: <Widget>[
-        OutlinedButton( // İptal butonu
+        OutlinedButton(
+          // İptal butonu
           child: Text('İptal'),
           onPressed: () => Navigator.of(context).pop(),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: Colors.grey), // Kenarlık rengi
           ),
         ),
-        ElevatedButton( // Kaydet butonu (daha belirgin)
+        ElevatedButton(
+          // Kaydet butonu (daha belirgin)
           child: Text('Kaydet'),
           onPressed: _save,
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary, // Ana renk
-            foregroundColor: Theme.of(context).colorScheme.onPrimary, // Yazı rengi
+            foregroundColor:
+                Theme.of(context).colorScheme.onPrimary, // Yazı rengi
           ),
         ),
       ],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)), // Dialog kenarları
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0)), // Dialog kenarları
     );
   }
 }
@@ -695,4 +813,5 @@ Future<void> initializeDateFormatting(String locale, String? _) async {
 // Bu kısım intl >= 0.18 için gerekli olabilir
 Map<String, dynamic> messages = {}; // Boş bir map tanımla
 Future<Map<String, dynamic>> findLocaleData(String locale) async => messages;
+
 void initializeMessages(String locale, Map<String, dynamic> messages) {}
