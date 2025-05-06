@@ -57,13 +57,10 @@ dependencies {
     // Standart AndroidX kütüphaneleri
     implementation "androidx.appcompat:appcompat:1.6.1"     // AppCompatActivity ve temalar için
     implementation "androidx.core:core-ktx:1.10.1"           // Kotlin çekirdek uzantıları
-
     // ---> ConstraintLayout Kütüphanesi (Layout için eklendi) <---
     implementation "androidx.constraintlayout:constraintlayout:2.1.4" // Stabil versiyon 2.2.1 son sürüm
-
     // ---> Core Library Desugaring Bağımlılığı (compileOptions'daki ayar için gerekli) <---
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // veya daha güncel bir versiyon
-
     // Flutter ve plugin bağımlılıkları otomatik olarak eklenir
     // implementation "..." // Diğer native bağımlılıklar buraya eklenebilir
 }
