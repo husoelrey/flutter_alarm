@@ -1,19 +1,16 @@
 // ────────────────────────────────────────────────────────────────────────
-// main.dart    →  TAM DOSYA (Native Alarm Tetikleme İçin Düzenlendi)
+// main.dart    →  TAM DOSYA (Native Alarm Tetikleme & İzin Ekranı İçin Düzenlendi)
 // ────────────────────────────────────────────────────────────────────────
 
 // ——— Dart / Flutter —
 import 'dart:convert'; // AlarmStorage için
 import 'dart:io' show Platform;
-// import 'dart:isolate'; // ARTIK GEREKLİ DEĞİL (alarmCallback kaldırıldı)
-// import 'dart:ui';      // ARTIK GEREKLİ DEĞİL (alarmCallback kaldırıldı)
 
 import 'package:flutter/foundation.dart';           // debugPrint
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';             // MethodChannel
 
 // ——— Üçüncü-taraf paketler —
-// import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart'; // KALDIRILDI
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -38,7 +35,6 @@ const MethodChannel _nativeChannel =
 MethodChannel('com.example.alarm/native');
 
 // ───────── Alarm callback (ARTIK KULLANILMIYOR) ─────────
-// Dart tarafında çalışan bir alarm callback'i artık yok.
 // Tetikleme tamamen native tarafta (AlarmTriggerReceiver) gerçekleşiyor.
 
 /// Bildirim kanalını yapılandırma fonksiyonu
@@ -73,7 +69,7 @@ Future<void> main() async {
   await initializeDateFormatting('tr_TR', null);
 
   // --- Bildirimler (Opsiyonel) ---
-  final launch = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+  // final launch = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
   // final openedViaNotifPayload = launch?.notificationResponse?.payload;
 
   const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -88,33 +84,30 @@ Future<void> main() async {
   );
   await _configureNotificationChannel();
 
-  // --- İzinler ---
+  // --- İzinler (Sadece Durum Kontrolü) ---
   bool allCriticalPermissionsGranted = false;
   if (Platform.isAndroid) {
-    debugPrint("Checking critical permissions...");
-    // Gerekli izinlerin durumunu KONTROL ET (İstek yapma)
-    final statuses = await [
-      Permission.ignoreBatteryOptimizations,
-      Permission.systemAlertWindow,
-      Permission.scheduleExactAlarm, // Android 12+
-      Permission.notification,       // Android 13+
-    ].request(); // İlk açılışta veya kontrol sırasında isteyebiliriz
+    debugPrint("Checking critical permissions status...");
+    // İzinleri istemek yerine SADECE durumlarını KONTROL ET
+    final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+    final overlayStatus = await Permission.systemAlertWindow.status;
+    final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
+    final notificationStatus = await Permission.notification.status;
 
     // Durumları kontrol et
-    final batteryGranted = statuses[Permission.ignoreBatteryOptimizations]?.isGranted ?? false;
-    final overlayGranted = statuses[Permission.systemAlertWindow]?.isGranted ?? false;
-    final exactAlarmGranted = statuses[Permission.scheduleExactAlarm]?.isGranted ?? false;
-    final notificationGranted = statuses[Permission.notification]?.isGranted ?? false;
+    final batteryGranted = batteryStatus.isGranted;
+    final overlayGranted = overlayStatus.isGranted;
+    final exactAlarmGranted = exactAlarmStatus.isGranted;
+    final notificationGranted = notificationStatus.isGranted;
 
-    // Android 12'den küçükse exactAlarm iznini kontrol etme
-    // (Bu kontrol daha hassas yapılabilir ama şimdilik böyle bırakalım)
-    // TODO: Daha iyi Android versiyon kontrolü eklenebilir.
+    // Android 12+ kontrolü (basitleştirilmiş)
     final bool checkExactAlarm = await _isAndroid12OrHigher();
 
+    // Tüm GEREKLİ izinler verilmiş mi?
     allCriticalPermissionsGranted = batteryGranted && overlayGranted && notificationGranted && (!checkExactAlarm || exactAlarmGranted) ;
 
-    debugPrint("Permission Status: Battery=$batteryGranted, Overlay=$overlayGranted, ExactAlarm=$exactAlarmGranted (Required: $checkExactAlarm), Notification=$notificationGranted");
-    debugPrint("All critical permissions granted: $allCriticalPermissionsGranted");
+    debugPrint("Permission Status (Initial Check): Battery=$batteryGranted, Overlay=$overlayGranted, ExactAlarm=$exactAlarmGranted (Required: $checkExactAlarm), Notification=$notificationGranted");
+    debugPrint("All critical permissions granted on startup: $allCriticalPermissionsGranted");
 
   } else {
     allCriticalPermissionsGranted = true; // Diğer platformlar için
@@ -126,6 +119,7 @@ Future<void> main() async {
   // --- Uygulamayı Başlat ---
   runApp(
     MyApp(
+      // İzinler tamamsa '/', eksikse '/permissions' rotasını başlat
       initialRoute: allCriticalPermissionsGranted ? '/' : '/permissions',
       // alarmPayload: openedViaNotifPayload,
     ),
@@ -135,11 +129,8 @@ Future<void> main() async {
 // Android S (API 31) veya üstü olup olmadığını kontrol etme (izin kontrolü için)
 Future<bool> _isAndroid12OrHigher() async {
   if (Platform.isAndroid) {
-    // Bu bilgi normalde native taraftan alınmalı ama permission_handler'ın
-    // scheduleExactAlarm izni zaten S+ için geçerli. Direkt true dönebiliriz
-    // veya daha sağlam bir kontrol için device_info_plus paketi kullanılabilir.
-    // Şimdilik permission_handler'ın varlığı yeterli kabul edilebilir.
-    return true; // Varsayım: Modern cihazlarda kontrol gerekli.
+    // Daha kesin kontrol için device_info_plus kullanılabilir, şimdilik varsayım yapalım.
+    return true; // Modern cihazlarda kontrol gerekli varsayımı
   }
   return false;
 }
@@ -172,7 +163,7 @@ class MyApp extends StatelessWidget {
       initialRoute: initialRoute,
       routes: {
         '/': (_) => const AlarmHomePage(),
-        '/permissions': (_) => PermissionScreen(),
+        '/permissions': (_) => const PermissionScreen(), // PermissionScreen widget'ını kullan
       },
       // onGenerateRoute: Artık /ring rotası Flutter'da ele alınmıyor.
       onGenerateRoute: (settings) {
@@ -199,9 +190,15 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
   @override
   void initState() {
     super.initState();
-    _checkPermissionsAndLoad();
+    // Artık main kontrol ettiği için buradaki kontrol kaldırılabilir veya
+    // sadece bir loglama/doğrulama amaçlı kalabilir.
+    // Şimdilik kaldırıyorum, eğer main'deki yönlendirme çalışıyorsa gerek yok.
+    // _checkPermissionsAndLoad();
+    _loadAlarmsAndReschedule(); // Doğrudan alarmları yükle
   }
 
+  // Bu fonksiyon artık initState'ten çağrılmıyor ama referans olarak kalabilir.
+  /*
   Future<void> _checkPermissionsAndLoad() async {
     if (Platform.isAndroid) {
       final batteryGranted = await Permission.ignoreBatteryOptimizations.isGranted;
@@ -212,23 +209,25 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
 
       if (!batteryGranted || !overlayGranted || !notificationGranted || (checkExactAlarm && !exactAlarmGranted)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/permissions');
-          }
+           if (mounted) {
+              Navigator.of(context).pushReplacementNamed('/permissions');
+           }
         });
         return;
       }
     }
     _loadAlarmsAndReschedule();
   }
+  */
 
   Future<void> _loadAlarmsAndReschedule() async {
+    // İzinlerin burada tekrar kontrol edilmesi GEREKLİ DEĞİL,
+    // çünkü bu sayfaya gelindiyse izinler zaten tam olmalı.
     setState(() { _isLoading = true; });
     _alarms = await AlarmStorage.loadAlarms();
     final now = DateTime.now();
     bool needsSave = false;
     List<AlarmInfo> updatedAlarms = [];
-    // Native tarafa gönderilecek planlama/iptal işleri listesi
     List<Future<bool>> scheduleFutures = [];
 
     for (var alarm in _alarms) {
@@ -236,13 +235,8 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
         debugPrint("Deactivating past one-shot alarm ID: ${alarm.id}");
         alarm.isActive = false;
         needsSave = true;
-        // Sistemden kaldırmaya gerek yok, ZATEN ÇALMAMALI (native taraf kuracak)
-        // Ama yine de temizlik için native cancel çağrılabilir.
-        scheduleFutures.add(_scheduleSystemAlarm(alarm)); // Pasif olduğu için native cancel çağırır
+        scheduleFutures.add(_scheduleSystemAlarm(alarm)); // Native cancel çağırır
       } else {
-        // Aktif veya pasif tüm alarmlar için _scheduleSystemAlarm'ı çağır.
-        // Bu fonksiyon alarm aktifse native schedule, pasifse native cancel çağıracak.
-        // Aktifse, bir sonraki zamanı da hesaplayıp gönderecek.
         if (alarm.isActive) {
           DateTime nextAlarmTime = alarm.calculateNextAlarmTime(now);
           if (alarm.dateTime != nextAlarmTime) {
@@ -251,13 +245,11 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
             needsSave = true;
           }
         }
-        scheduleFutures.add(_scheduleSystemAlarm(alarm));
+        scheduleFutures.add(_scheduleSystemAlarm(alarm)); // Native schedule/cancel çağırır
       }
       updatedAlarms.add(alarm);
     }
 
-    // Tüm native çağrıların bitmesini bekle
-    // Sonuçları kontrol etmek çok anlamlı olmayabilir, loglara bakmak daha iyi.
     await Future.wait(scheduleFutures);
 
     if (needsSave) {
@@ -285,19 +277,17 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
   Future<void> _saveOrUpdateAlarm(AlarmInfo alarm) async {
     final now = DateTime.now();
     alarm.dateTime = alarm.calculateNextAlarmTime(now);
-    alarm.isActive = true; // Yeni/güncellenen alarm aktif başlasın
+    alarm.isActive = true;
 
     bool scheduled = await _scheduleSystemAlarm(alarm); // Native schedule çağır
 
-    if (scheduled) { // Burada 'scheduled' sadece metodun hata vermediği anlamına geliyor
+    if (scheduled) {
       int existingIndex = _alarms.indexWhere((a) => a.id == alarm.id);
       setState(() {
         if (existingIndex != -1) {
           _alarms[existingIndex] = alarm;
-          debugPrint("Alarm updated in list: ID ${alarm.id}");
         } else {
           _alarms.add(alarm);
-          debugPrint("New alarm added to list: ID ${alarm.id}");
         }
         _alarms.sort((a, b) => a.dateTime.compareTo(b.dateTime));
       });
@@ -307,7 +297,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
           SnackBar(
               content: Text(
                   'Alarm ${existingIndex != -1 ? 'güncellendi' : 'kuruldu'}: ${DateFormat('dd MMM HH:mm', 'tr_TR').format(alarm.dateTime)}'),
-              duration: Duration(seconds: 2)),
+              duration: const Duration(seconds: 2)),
         );
       }
     } else {
@@ -323,11 +313,9 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
   }
 
   Future<void> _toggleAlarm(AlarmInfo alarm, bool isActive) async {
-    // Önce UI'da değişikliği yansıt, sonra native tarafı çağır
     final originalState = alarm.isActive;
     setState(() {
       alarm.isActive = isActive;
-      // Eğer aktif yapılıyorsa, bir sonraki zamanı hesapla (gerekirse)
       if (isActive) {
         alarm.dateTime = alarm.calculateNextAlarmTime(DateTime.now());
       }
@@ -336,11 +324,9 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     bool success = await _scheduleSystemAlarm(alarm); // Native schedule/cancel çağır
 
     if (success) {
-      // Başarılıysa değişikliği kaydet
       await AlarmStorage.updateAlarm(alarm);
       debugPrint("Alarm (ID: ${alarm.id}) status update request sent: $isActive");
     } else {
-      // Native çağrı başarısızsa, UI'ı eski haline getir
       setState(() { alarm.isActive = originalState; });
       debugPrint("Failed to send status update for alarm (ID: ${alarm.id}).");
       if (mounted) {
@@ -351,7 +337,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     }
   }
 
-  // Sistemi kurma/iptal etme (Native metodları çağırır)
+  // Native metodları çağıran fonksiyon
   Future<bool> _scheduleSystemAlarm(AlarmInfo alarm) async {
     if (alarm.isActive) {
       debugPrint(
@@ -381,12 +367,11 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     }
   }
 
-  // Alarmı sil (Native iptal metodunu kullanır)
+  // Native iptal metodunu çağıran fonksiyon
   Future<void> _deleteAlarm(AlarmInfo alarm, int index) async {
     debugPrint("Requesting native cancel for deletion: ID ${alarm.id}");
     bool cancelled = false;
     try {
-      // Önce native tarafta iptal etmeye çalış
       await _nativeChannel.invokeMethod('cancelNativeAlarm', {'id': alarm.id});
       debugPrint("Native cancel request successful for deletion ID: ${alarm.id}");
       cancelled = true;
@@ -394,18 +379,14 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
       debugPrint("🚨 Failed to invoke native cancel method during deletion for ID ${alarm.id} → $e\n$s");
     }
 
-    // İptal başarılı olsun veya olmasın, listeden kaldır
-    setState(() {
-      _alarms.removeAt(index);
-    });
-    // Değişikliği kaydet
+    setState(() { _alarms.removeAt(index); });
     await AlarmStorage.saveAlarms(_alarms);
     debugPrint('Alarm (ID: ${alarm.id}) deleted from list.');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Alarm silindi${cancelled ? "" : " (Sistemden kaldırılamamış olabilir!)"}'),
-            duration: Duration(seconds: 2)),
+            duration: const Duration(seconds: 2)),
       );
     }
   }
@@ -443,8 +424,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
           ))
           : ListView.separated(
         itemCount: _alarms.length,
-        separatorBuilder: (context, index) => const Divider(
-            height: 1, indent: 16, endIndent: 16),
+        separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
         itemBuilder: (context, index) {
           final alarm = _alarms[index];
           final now = DateTime.now();
@@ -454,16 +434,10 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
           if (!alarm.isActive) {
             nextTimeString = "Pasif";
           } else if (nextOccurrence.isBefore(now) && alarm.repeatDays.isEmpty) {
-            // Yüklemede pasifleştirilmiş olmalı ama yine de kontrol
             nextTimeString = "Pasif (Geçmiş)";
           } else {
-            final isToday = now.year == nextOccurrence.year &&
-                now.month == nextOccurrence.month &&
-                now.day == nextOccurrence.day;
-            final isTomorrow = now.add(const Duration(days: 1)).year == nextOccurrence.year &&
-                now.add(const Duration(days: 1)).month == nextOccurrence.month &&
-                now.add(const Duration(days: 1)).day == nextOccurrence.day;
-
+            final isToday = now.year == nextOccurrence.year && now.month == nextOccurrence.month && now.day == nextOccurrence.day;
+            final isTomorrow = now.add(const Duration(days: 1)).year == nextOccurrence.year && now.add(const Duration(days: 1)).month == nextOccurrence.month && now.add(const Duration(days: 1)).day == nextOccurrence.day;
             if (isToday) {
               nextTimeString = 'Bugün ${DateFormat('HH:mm').format(nextOccurrence)}';
             } else if (isTomorrow) {
@@ -473,28 +447,20 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
             }
           }
 
-
           return ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             leading: Icon(
               alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
-              color: alarm.isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey,
+              color: alarm.isActive ? Theme.of(context).colorScheme.primary : Colors.grey,
               size: 30,
             ),
             title: Text(
-              // Saati direkt alarm.dateTime'dan formatla
-              DateFormat('HH:mm').format(alarm.dateTime),
+              DateFormat('HH:mm').format(alarm.dateTime), // DateTime kullanılıyor
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: alarm.isActive
-                    ? Theme.of(context).textTheme.bodyLarge?.color
-                    : Colors.grey[500],
-                decoration: !alarm.isActive
-                    ? TextDecoration.lineThrough
-                    : null,
+                color: alarm.isActive ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[500],
+                decoration: !alarm.isActive ? TextDecoration.lineThrough : null,
                 decorationColor: Colors.grey[500],
               ),
             ),
@@ -508,9 +474,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
                       alarm.label!,
                       style: TextStyle(
                           fontSize: 16,
-                          color: alarm.isActive
-                              ? Theme.of(context).textTheme.bodyMedium?.color
-                              : Colors.grey),
+                          color: alarm.isActive ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -525,9 +489,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
             ),
             trailing: Switch(
               value: alarm.isActive,
-              onChanged: (bool value) {
-                _toggleAlarm(alarm, value);
-              },
+              onChanged: (bool value) { _toggleAlarm(alarm, value); },
               activeColor: Theme.of(context).colorScheme.primary,
             ),
             onTap: () => _showAddEditAlarmDialog(existingAlarm: alarm),
@@ -538,7 +500,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
                   return AlertDialog(
                     title: const Text('Alarmı Sil?'),
                     content: Text(
-                        'Bu alarmı (${DateFormat('HH:mm').format(alarm.dateTime)}${alarm.label != null && alarm.label!.isNotEmpty ? ' - ${alarm.label}' : ''}) kalıcı olarak silmek istediğinizden emin misiniz?'),
+                        'Bu alarmı (${DateFormat('HH:mm').format(alarm.dateTime)}${alarm.label != null && alarm.label!.isNotEmpty ? ' - ${alarm.label}' : ''}) kalıcı olarak silmek istediğinizden emin misiniz?'), // DateTime kullanılıyor
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
@@ -610,16 +572,17 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
 
   void _save() async {
     final now = DateTime.now();
+    // Sadece saat bilgisini içeren geçici bir DateTime oluştur
     DateTime baseDateTimeWithSelectedTime = DateTime(now.year, now.month, now.day, _selectedTime.hour, _selectedTime.minute);
 
     final alarmInfo = AlarmInfo(
       id: widget.initialAlarm?.id ?? await AlarmStorage.getNextAlarmId(),
-      dateTime: baseDateTimeWithSelectedTime, // Geçici zaman
+      dateTime: baseDateTimeWithSelectedTime, // Geçici zaman (asıl hesaplama saveOrUpdate'te)
       label: _labelController.text.trim(),
       repeatDays: _selectedDays.toList()..sort(),
-      isActive: widget.initialAlarm?.isActive ?? true, // Varsa eskisini koru, yoksa true
+      isActive: widget.initialAlarm?.isActive ?? true,
     );
-    Navigator.of(context).pop(alarmInfo);
+    Navigator.of(context).pop(alarmInfo); // Dialogu kapat ve sonucu döndür
   }
 
   @override
@@ -670,7 +633,7 @@ class __AlarmEditDialogState extends State<_AlarmEditDialog> {
               runSpacing: 4.0,
               alignment: WrapAlignment.center,
               children: List<Widget>.generate(7, (int index) {
-                final dayValue = index + 1; // 1=Pzt, ..., 7=Paz
+                final dayValue = index + 1;
                 final isSelected = _selectedDays.contains(dayValue);
                 return ChoiceChip(
                   label: Text(dayNames[index]),

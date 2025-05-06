@@ -8,4 +8,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- ... diğer renklerin ... -->
+    <color name="very_dark_navy">#FF000033</color> <!-- Çok koyu lacivert (istediğin tonu ayarlayabilirsin) -->
+    <color name="light_grey_text">#FFCCCCCC</color> <!-- Tarih ve etiket için biraz daha soluk beyaz -->
 </resources>
