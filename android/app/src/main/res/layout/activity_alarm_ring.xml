@@ -1,75 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/alarmRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/very_dark_navy"
-    tools:context=".AlarmRingActivity">
+    android:background="#121212"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp">
 
-    <!-- Dijital Saat -->
     <TextView
         android:id="@+id/textViewTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/white"
-        android:textSize="80sp"
-        android:fontFamily="sans-serif-light"
-        tools:text="10:30"
-        app:layout_constraintVertical_bias="0.35"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:text="07:00"
+        android:textSize="64sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp" />
 
-    <!-- Tarih -->
     <TextView
         android:id="@+id/textViewDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textColor="@color/light_grey_text"
+        android:text="6 Mayıs Pazartesi"
         android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="@+id/textViewTime"
-        app:layout_constraintStart_toStartOf="@+id/textViewTime"
-        app:layout_constraintTop_toBottomOf="@+id/textViewTime"
-        tools:text="1 Mayıs Perşembe" />
+        android:textColor="#CCCCCC"
+        android:layout_marginBottom="24dp" />
 
-    <!-- Alarm Etiketi -->
     <TextView
         android:id="@+id/textViewLabel"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="32dp"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:maxLines="2"
-        android:textColor="@color/light_grey_text"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewDate"
-        tools:text="Önemli Toplantı Alarmı" />
-
-    <!-- Kapat Butonu (Standart Boyut) -->
-    <Button
-        android:id="@+id/buttonDismiss"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:paddingStart="24dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="12dp"
-        android:text="ALARM KAPAT"
-        android:textColor="@android:color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:text="Sabah Alarmı"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="48dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <Button
+        android:id="@+id/buttonDismiss"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Kapat"
+        android:paddingLeft="32dp"
+        android:paddingRight="32dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#E53935"
+        android:elevation="6dp"
+        android:textSize="16sp" />
+</LinearLayout>

@@ -9,7 +9,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';           // debugPrint
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';             // MethodChannel
-
+import 'motivation_page.dart';
 // ——— Üçüncü-taraf paketler —
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -58,6 +58,46 @@ Future<void> _configureNotificationChannel() async {
   }
 }
 
+
+// 🔽 1)  ---  MainShell'i ÖNCE tanımla (veya MyApp'ten sonra) ---
+class MainShell extends StatefulWidget {
+  const MainShell({super.key});
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    const AlarmHomePage(),
+    MotivationPage(),
+  ];
+
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.access_alarm),
+            label: 'Alarmlar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.format_quote),
+            label: 'Motivasyonlar',
+          ),
+        ],
+      ),
+    );
+  }
+}
 // ───────────────────── ANA UYGULAMA GİRİŞ NOKTASI ─────────────────────
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -140,6 +180,7 @@ Future<bool> _isAndroid12OrHigher() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.initialRoute, this.alarmPayload});
 
+
   final String initialRoute;
   final String? alarmPayload;
 
@@ -162,7 +203,7 @@ class MyApp extends StatelessWidget {
       ],
       initialRoute: initialRoute,
       routes: {
-        '/': (_) => const AlarmHomePage(),
+        '/': (_)  => const MainShell(),
         '/permissions': (_) => const PermissionScreen(), // PermissionScreen widget'ını kullan
       },
       // onGenerateRoute: Artık /ring rotası Flutter'da ele alınmıyor.
