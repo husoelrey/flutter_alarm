@@ -95,6 +95,13 @@ class MainActivity : FlutterActivity() {
                     .invokeMethod("openTypingPage", mapOf("alarmId" to alarmId))
             }
         }
+        else if (route == "/memory" && alarmId != -1) {
+            Log.d(TAG, "openMemoryPage → ID=$alarmId")
+            flutterEngineRef?.dartExecutor?.binaryMessenger?.let { messenger ->
+                MethodChannel(messenger, NATIVE_CHANNEL)
+                    .invokeMethod("openMemoryPage", mapOf("alarmId" to alarmId))
+            }
+        }
     }
 
 

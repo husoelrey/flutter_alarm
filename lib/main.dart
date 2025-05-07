@@ -16,6 +16,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart'; // firstWhereOrNull için
+import 'package:alarm/grid_memory_game_page.dart';
 
 // ——— Uygulama dosyaları —
 import 'motivation_page.dart';
@@ -25,6 +26,7 @@ import 'motivation_typing_page.dart';
 import 'permission_screen.dart';
 
 int? nativeAlarmId;
+
 
 const _native = MethodChannel('com.example.alarm/native');
 
@@ -130,6 +132,11 @@ class _MainShellState extends State<MainShell> {
     );
   }
 }
+
+
+
+
+
 // ───────────────────── ANA UYGULAMA GİRİŞ NOKTASI ─────────────────────
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -187,7 +194,60 @@ Future<void> main() async {
     allCriticalPermissionsGranted = true; // Diğer platformlar için
   }
 
-  // --- Alarm Yöneticisi Başlatma (ARTIK GEREKLİ DEĞİL) ---
+  // Küçük yardımcı: şu anki sayfanın rotası belirli mi?
+  bool _isCurrentRoute(String name) =>
+      navigatorKey.currentContext != null &&
+          ModalRoute.of(navigatorKey.currentContext!)?.settings.name == name;
+
+  platform.setMethodCallHandler((call) async {
+    final alarmId = call.arguments["alarmId"] as int?;
+    debugPrint("📲 Native çağrı: ${call.method} | id=$alarmId");
+
+    // ❶ ID gelmemişse yapılacak iş yok
+    if (alarmId == null) return;
+
+    // ─────────────────────────── MEMORY PAGE ───────────────────────────
+    if (call.method == "openMemoryPage") {
+      nativeAlarmId = alarmId;                 // her seferinde güncelle
+
+      /*  Aynı alarm için /memory zaten açıksa YENİDEN AÇMA
+        Böylece üst üste sayfa bindirmiyoruz. */
+      if (_isCurrentRoute('/memory')) {
+        debugPrint("⚠️  /memory zaten açık → yeni sayfa açılmadı");
+        return;
+      }
+
+      void _openMemory() => Navigator.of(navigatorKey.currentContext!)
+          .pushReplacementNamed('/memory', arguments: {"alarmId": alarmId});
+
+      if (navigatorKey.currentContext != null) {
+        _openMemory();                         // context hazır
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (navigatorKey.currentContext != null) _openMemory();
+        });
+      }
+      return;                                  // çağrı işlendi
+    }
+
+    // ─────────────────────────── TYPING PAGE ───────────────────────────
+    if (call.method == "openTypingPage") {
+      if (_isCurrentRoute('/typing')) {
+        debugPrint("⚠️  /typing zaten açık");
+        return;
+      }
+      if (navigatorKey.currentContext != null) {
+        Navigator.of(navigatorKey.currentContext!).pushReplacementNamed(
+          '/typing',
+          arguments: {"alarmId": alarmId},
+        );
+      }
+    }
+  });
+
+
+
+// --- Alarm Yöneticisi Başlatma (ARTIK GEREKLİ DEĞİL) ---
   // await AndroidAlarmManager.initialize(); // KALDIRILDI
 
   // --- Uygulamayı Başlat ---
@@ -240,14 +300,20 @@ class MyApp extends StatelessWidget {
       },
       initialRoute: initialRoute,
       routes: {
-        '/': (_)  => const MainShell(),
+        '/': (_) => const MainShell(),
         '/permissions': (_) => const PermissionScreen(),
         '/typing': (context) {
           final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
           final alarmId = args?['alarmId'] as int?;
           return MotivationTypingPage(alarmId: alarmId);
         },
+        '/memory': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final alarmId = args?['alarmId'] as int?;
+          return GridMemoryGamePage(alarmId: alarmId);
+        },
       },
+
       onGenerateRoute: (settings) {
         debugPrint("onGenerateRoute called for ${settings.name} - No specific handler.");
         return null;

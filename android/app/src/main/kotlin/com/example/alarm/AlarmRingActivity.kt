@@ -109,16 +109,17 @@ class AlarmRingActivity : AppCompatActivity() {
         }
 
         buttonDismiss.setOnClickListener {
-            Log.d(TAG, "Dismiss button clicked for ID: $alarmId")
-            stopRingService(alarmId)
-
             val flutterIntent = Intent(this, MainActivity::class.java).apply {
-                putExtra("route", "/typing")
+                putExtra("route", "/memory")        // 🔹 sadece memory'e yönlendiriyoruz
                 putExtra("alarmId", alarmId)
             }
             startActivity(flutterIntent)
-            finish()
+
+            Log.d(TAG, "Dismiss button clicked for ID: $alarmId")
+            stopRingService(alarmId)
+            finish()  // 🔹 unutma: bu aktiviteyi kapatıyoruz
         }
+
 
         Log.d(TAG, "onCreate finished successfully")
     }
