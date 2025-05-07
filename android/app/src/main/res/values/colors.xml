@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Bu bir yorumdur ve <?xml> satırından SONRA gelmelidir -->
+
+    <!--  Brand palette  -->
+    <color name="navy_bg">#0B1527</color>          <!-- ana arka plan -->
+    <color name="navy_surface">#121E33</color>     <!-- kart/uygulama bar yüzeyi -->
+    <color name="teal_accent">#64FFDA</color>      <!-- Flutter Colors.tealAccent -->
+    <color name="teal_accent_dark">#1EBBA5</color> <!-- buton ripple/pressed -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#B3FFFFFF</color> <!-- %70 beyaz -->
+    <color name="error_red">#E53935</color>        <!-- Kapat butonu (değişmedi) -->
+
+    <!-- eski örnek renkler (kullanılmıyor ama kalsın dersen) -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <!-- ... diğer renklerin ... -->
-    <color name="background_color">#121212</color> <!-- Dark background -->
-    <color name="primary_text">#FFFFFF</color>
-    <color name="stop_button">#E53935</color> <!-- Kırmızı tonlu "Kapat" butonu -->
 
-    <color name="very_dark_navy">#FF000033</color> <!-- Çok koyu lacivert (istediğin tonu ayarlayabilirsin) -->
-    <color name="light_grey_text">#FFCCCCCC</color> <!-- Tarih ve etiket için biraz daha soluk beyaz -->
+
 </resources>
