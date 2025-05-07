@@ -27,7 +27,7 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
   static const Color tileWrong = Color(0xFFE53935);         // hata (yarı saydam veriyoruz)
 
   // ——— durum ———
-  late final int alarmIdEffective;
+  int? alarmIdEffective;
   final Set<int> hintIndexes   = {};
   final Set<int> foundIndexes  = {};
   final Set<int> selected      = {};
@@ -43,7 +43,19 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
   @override
   void initState() {
     super.initState();
-    alarmIdEffective = widget.alarmId ?? nativeAlarmId!;
+
+    // 🔄 ALARM ID’Yİ GÜVENLİ ŞEKİLDE AL
+    alarmIdEffective = widget.alarmId ?? nativeAlarmId;
+
+    // Hâlâ null ise sayfayı açmak mantıksız, sessizce geri dön
+    if (alarmIdEffective == null) {
+      debugPrint("⚠️ GridMemoryGamePage: alarmId bulunamadı, sayfa kapatılıyor.");
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+      return;
+    }
+
     _generateHints();
     _startHint(first: true);
     _startTimer();

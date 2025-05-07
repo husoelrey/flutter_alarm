@@ -283,10 +283,27 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       title: 'Flutter Alarm',
       debugShowCheckedModeBanner: false,
+
+      // ─── YENİ TEMA ────────────────────────────────
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0B1527),      // koyu lacivert
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.tealAccent,
+          brightness: Brightness.dark,
+          primary: Colors.tealAccent,
+          secondary: Colors.tealAccent,
+          background: const Color(0xFF0B1527),
+          surface: const Color(0xFF121E33),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF121E33),
+          foregroundColor: Colors.tealAccent,
+          elevation: 0,
+        ),
         useMaterial3: true,
       ),
+      // ─── 👇 BU KISIMLAR ESKİ GİBİ DURMALI ────────
       locale: const Locale('tr', 'TR'),
       supportedLocales: const [Locale('tr', 'TR')],
       localizationsDelegates: const [
@@ -295,12 +312,12 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) {
-        setupNativeChannelHandler(context); // 🔹 EKLENEN KISIM
+        setupNativeChannelHandler(context);
         return child!;
       },
-      initialRoute: initialRoute,
+      initialRoute: initialRoute,        // <- zaten varolan değişkenin
       routes: {
-        '/': (_) => const MainShell(),
+        '/': (_)            => const MainShell(),
         '/permissions': (_) => const PermissionScreen(),
         '/typing': (context) {
           final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -313,12 +330,9 @@ class MyApp extends StatelessWidget {
           return GridMemoryGamePage(alarmId: alarmId);
         },
       },
-
-      onGenerateRoute: (settings) {
-        debugPrint("onGenerateRoute called for ${settings.name} - No specific handler.");
-        return null;
-      },
     );
+
+
   }
 }
 
