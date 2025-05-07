@@ -21,7 +21,7 @@ class RingService : Service() {
 
     companion object {
         const val ACTION_START = "com.example.alarm.ACTION_START_RING_SERVICE"
-        const val ACTION_STOP = "com.example.alarm.ACTION_STOP_RING_SERVICE"
+        const val ACTION_STOP  = "com.example.alarm.ACTION_STOP_RING_SERVICE"
         const val EXTRA_ALARM_ID = "ALARM_ID"
     }
 
@@ -32,89 +32,96 @@ class RingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
-        val alarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
 
-        Log.d(TAG, "onStartCommand received action: $action for ID: $alarmId")
+        val action  = intent?.action
+        val alarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
+        Log.d(TAG, "onStartCommand → action=$action  id=$alarmId")
 
         if (alarmId == -1 && action == ACTION_START) {
-            Log.e(TAG, "Cannot start service without a valid ALARM_ID.")
+            Log.e(TAG, "Geçersiz ALARM_ID, servis başlatılamıyor")
             stopSelf()
             return START_NOT_STICKY
         }
 
-        // Tam ekran açılacak sayfa
+        /* ───── FULL‑SCREEN INTENT •––––––––––––––––––––– */
         val fullScreenIntent = Intent(this, AlarmRingActivity::class.java).apply {
             putExtra("id", alarmId)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+
+        val piFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         else PendingIntent.FLAG_UPDATE_CURRENT
 
-        val fullScreenPendingIntent = PendingIntent.getActivity(this, alarmId, fullScreenIntent, pendingIntentFlags)
+        val fullScreenPI = PendingIntent.getActivity(
+            this, alarmId, fullScreenIntent, piFlags
+        )
 
-        val notificationTapIntent = Intent(this, AlarmRingActivity::class.java).apply {
-            putExtra("id", alarmId)
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-        val notificationTapPendingIntent = PendingIntent.getActivity(this, alarmId + 1000, notificationTapIntent, pendingIntentFlags)
+        /* Bildirime tıklandığında da aynı sayfa açılsın */
+        val tapPI = PendingIntent.getActivity(
+            this, alarmId + 1000, fullScreenIntent, piFlags
+        )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+        /* ───── Bildirim •––––––––––––––––––––────────── */
+        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)          // isteğe göre değiştir
             .setContentTitle("Alarm Çalıyor!")
-            .setContentText(getAlarmLabelFromId(alarmId))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setContentText("Alarm ID: $alarmId çalıyor")
+            .setPriority(NotificationCompat.PRIORITY_MAX) // heads‑up
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setFullScreenIntent(fullScreenPendingIntent, true)
-            .setContentIntent(notificationTapPendingIntent)
+            .setFullScreenIntent(fullScreenPI, true)      // 💥 kritik
+            .setContentIntent(tapPI)
             .build()
 
         try {
-            startForeground(NOTIFICATION_ID, notification)
-            Log.d(TAG, "Service started in foreground with FullScreen Intent for ID: $alarmId.")
+            startForeground(NOTIFICATION_ID, notif)
+            Log.d(TAG, "Foreground + bildirim başlatıldı")
         } catch (e: Exception) {
-            Log.e(TAG, "Error starting foreground service", e)
+            Log.e(TAG, "startForeground hatası", e)
             stopSelf()
             return START_NOT_STICKY
         }
 
+        /* ───── Aksiyonlar •––––––––––––––––––––──────── */
         when (action) {
+
             ACTION_START -> {
-                Log.d(TAG, "ACTION_START received. Calling startSound() for ID: $alarmId.")
                 startSound()
+                /* Bazı cihazlarda sistem tam‑ekranı otomatik açmıyor →
+                   emin olmak için kendimiz de başlatıyoruz.              */
+                try {
+                    startActivity(fullScreenIntent)
+                    Log.d(TAG, "AlarmRingActivity manuel olarak başlatıldı")
+                } catch (e: Exception) {
+                    Log.e(TAG, "startActivity hatası", e)
+                }
             }
+
             ACTION_STOP -> {
-                Log.d(TAG, "ACTION_STOP received for ID: $alarmId.")
                 stopSoundAndService()
                 return START_NOT_STICKY
             }
+
             else -> {
-                Log.w(TAG, "Received unknown or null action ($action). Service might be restarting.")
-                if (mediaPlayer == null || mediaPlayer?.isPlaying == false) {
-                    Log.w(TAG, "Stopping service due to null/unknown intent and no active playback.")
-                    stopSelf()
-                    return START_NOT_STICKY
-                }
-                Log.d(TAG,"Service restarted (?), MediaPlayer seems to be playing. Taking no action.")
+                Log.w(TAG, "Bilinmeyen aksiyon: $action")
+                /* Player zaten çalıyorsa servis yaşamaya devam etsin */
+                if (mediaPlayer?.isPlaying != true) stopSelf()
             }
         }
 
         return START_STICKY
     }
 
-    private fun getAlarmLabelFromId(alarmId: Int): String {
-        return "Alarm ID: $alarmId çalıyor"
-    }
+    /* ───── Yardımcı fonksiyonlar (SES) •––––––––––––––––––––──────── */
 
     private fun startSound() {
-        Log.d(TAG, "startSound() called.")
-        stopSoundOnly()
+        Log.d(TAG, "startSound()")
+        stopSoundOnly()  // varsa eskiyi kapat
 
         val soundUri = Uri.parse("android.resource://$packageName/${R.raw.un}")
-        Log.d(TAG, "Parsed sound URI: $soundUri")
+        Log.d(TAG, "soundUri = $soundUri")
 
         mediaPlayer = MediaPlayer().apply {
             setAudioAttributes(
@@ -123,86 +130,58 @@ class RingService : Service() {
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .build()
             )
-            setOnErrorListener { _, what, extra ->
-                Log.e(TAG, "MediaPlayer OnErrorListener triggered - what: $what, extra: $extra")
-                stopSoundAndService()
-                true
+            setOnErrorListener { _, w, e ->
+                Log.e(TAG, "MediaPlayer error what=$w extra=$e"); stopSoundAndService(); true
             }
             try {
-                setDataSource(applicationContext, soundUri)
+                setDataSource(this@RingService, soundUri)
                 isLooping = true
-                prepareAsync()
-                setOnPreparedListener { mp ->
-                    try {
-                        mp.start()
-                        Log.d(TAG, "MediaPlayer started successfully.")
-                    } catch (e: IllegalStateException) {
-                        Log.e(TAG, "Failed to start MediaPlayer", e)
-                        stopSoundAndService()
-                    }
-                }
+                prepare()
+                start()
+                Log.d(TAG, "MediaPlayer started")
             } catch (e: Exception) {
-                Log.e(TAG, "Exception during MediaPlayer setup", e)
+                Log.e(TAG, "MediaPlayer hata", e)
                 stopSelf()
             }
         }
     }
 
     private fun stopSoundOnly() {
-        Log.d(TAG, "stopSoundOnly() called.")
         try {
-            if (mediaPlayer?.isPlaying == true) {
-                mediaPlayer?.stop()
-            }
+            mediaPlayer?.takeIf { it.isPlaying }?.stop()
             mediaPlayer?.release()
-        } catch (e: IllegalStateException) {
-            Log.e(TAG, "Error stopping/releasing MediaPlayer", e)
-        } finally {
-            mediaPlayer = null
-        }
+        } catch (e: Exception) {
+            Log.e(TAG, "MediaPlayer stop/release hata", e)
+        } finally { mediaPlayer = null }
     }
 
     private fun stopSoundAndService() {
         stopSoundOnly()
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-            } else {
-                @Suppress("DEPRECATION")
-                stopForeground(true)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping foreground", e)
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        else @Suppress("DEPRECATION") stopForeground(true)
         stopSelf()
     }
 
-    override fun onDestroy() {
-        stopSoundOnly()
-        super.onDestroy()
-    }
+    /* ───── Service & kanal boilerplate •––––––––––––––––––––──────── */
 
+    override fun onDestroy() { stopSoundOnly(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Alarm Sesi Servisi",
-                NotificationManager.IMPORTANCE_HIGH
+                CHANNEL_ID, "Alarm Servisi",
+                NotificationManager.IMPORTANCE_HIGH    // heads‑up & full‑screen
             ).apply {
-                description = "Alarm çalarken çalışan servis için bildirim kanalı"
+                description = "Alarm çalarken kullanılan kanal"
                 setSound(null, null)
                 enableVibration(false)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 setBypassDnd(true)
             }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            try {
-                manager.createNotificationChannel(channel)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to create notification channel", e)
-            }
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .createNotificationChannel(channel)
         }
     }
 }

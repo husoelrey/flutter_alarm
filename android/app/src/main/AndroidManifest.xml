@@ -2,15 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.alarm">
 
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+
+
+
 
     <application
         android:label="Alarm"
@@ -38,12 +41,14 @@
 
         <activity
             android:name=".AlarmRingActivity"
+            android:theme="@style/Theme.Alarm.FullScreen"
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:launchMode="singleTask"
-            android:excludeFromRecents="true"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:excludeFromRecents="true" />
+
+
 
         <service
             android:name=".RingService"

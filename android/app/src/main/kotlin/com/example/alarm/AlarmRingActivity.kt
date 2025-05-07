@@ -31,23 +31,24 @@ class AlarmRingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate started")
 
+        // 🚀 Tam ekran ve ekran açma bayrakları
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 setShowWhenLocked(true)
                 setTurnScreenOn(true)
-            } else {
-                window.addFlags(
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
-                            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                )
             }
-            Log.d(TAG, "Show/Turn flags set")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN
+            )
+            Log.d(TAG, "Show/Turn/Fullscreen flags set")
         } catch (e: Exception) {
             Log.e(TAG, "Error setting window flags", e)
         }
 
+        // 🔋 Ekranı uyandırmak için wakelock al
         try {
             val powerManager = getSystemService(POWER_SERVICE) as PowerManager
             wakeLock = powerManager.newWakeLock(
@@ -60,6 +61,7 @@ class AlarmRingActivity : AppCompatActivity() {
             Log.e(TAG, "Error acquiring wakelock", e)
         }
 
+        // 📄 XML layout yükle
         try {
             setContentView(R.layout.activity_alarm_ring)
             Log.d(TAG, "Layout activity_alarm_ring set")
@@ -89,9 +91,10 @@ class AlarmRingActivity : AppCompatActivity() {
             return
         }
 
-        // 🔹 ADIM: Tek seferlik alarmı pasifleştir (SharedPreferences içinde)
+        // ✅ Tek seferlik alarmı pasifleştir
         deactivateOneShotAlarmInPrefs(alarmId)
 
+        // 🕒 Saat ve tarih gösterimi
         val currentTime = Date()
         val timeFormatter = SimpleDateFormat("HH:mm", Locale("tr", "TR"))
         val dateFormatter = SimpleDateFormat("d MMMM EEEE", Locale("tr", "TR"))
@@ -99,6 +102,7 @@ class AlarmRingActivity : AppCompatActivity() {
         textViewTime.text = timeFormatter.format(currentTime)
         textViewDate.text = dateFormatter.format(currentTime)
 
+        // 🏷️ Etiket varsa göster
         val alarmLabel = getAlarmLabelFromPrefs(alarmId)
         if (!alarmLabel.isNullOrEmpty()) {
             textViewLabel.text = alarmLabel
@@ -108,18 +112,18 @@ class AlarmRingActivity : AppCompatActivity() {
             Log.d(TAG, "Label is null or empty, displaying ID.")
         }
 
+        // 🔕 Dismiss butonu → Flutter’a yönlendir
         buttonDismiss.setOnClickListener {
             val flutterIntent = Intent(this, MainActivity::class.java).apply {
-                putExtra("route", "/memory")        // 🔹 sadece memory'e yönlendiriyoruz
+                putExtra("route", "/memory")
                 putExtra("alarmId", alarmId)
             }
             startActivity(flutterIntent)
 
             Log.d(TAG, "Dismiss button clicked for ID: $alarmId")
             stopRingService(alarmId)
-            finish()  // 🔹 unutma: bu aktiviteyi kapatıyoruz
+            finish()
         }
-
 
         Log.d(TAG, "onCreate finished successfully")
     }
@@ -175,7 +179,6 @@ class AlarmRingActivity : AppCompatActivity() {
         Log.d(TAG, "Back button pressed, ignoring.")
     }
 
-    // 🔧 Tek seferlik alarmı SharedPreferences içinde pasifleştirme
     private fun deactivateOneShotAlarmInPrefs(alarmId: Int) {
         try {
             val prefs: SharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
