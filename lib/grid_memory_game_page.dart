@@ -18,7 +18,7 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
   static const int hintCount = 8;
   static const int clicksPerHint = 8;
   static const Duration hintDuration = Duration(seconds: 3);
-  static const int totalSeconds = 15;
+  static const int totalSeconds = 35;
 
   // ——— renk paleti ———
   static const Color bgNavy   = Color(0xFF0A0D2B);
