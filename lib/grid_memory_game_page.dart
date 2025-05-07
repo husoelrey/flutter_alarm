@@ -13,21 +13,28 @@ class GridMemoryGamePage extends StatefulWidget {
 }
 
 class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
-  // ——— oyun parametreleri ———
-  static const int gridSize   = 25;
-  static const int hintCount  = 8;   // doğru kare sayısı
-  static const int maxClicksBeforeHint = 8; // toplam 8 hamlede bir yeni ipucu
-  static const Duration hintDuration   = Duration(seconds: 3);
+  // ——— parametreler ———
+  static const int gridSize  = 25;
+  static const int hintCount = 8;
+  static const int clicksPerHint = 8;
+  static const Duration hintDuration = Duration(seconds: 3);
+  static const int totalSeconds = 15;
+
+  // ——— renk paleti ———
+  static const Color bgNavy   = Color(0xFF0A0D2B);
+  static const Color tileBase = Color(0xFF1A1E3F);          // nötr kare
+  static const Color tileHint = Colors.tealAccent;          // ipucu & doğru kare
+  static const Color tileWrong = Color(0xFFE53935);         // hata (yarı saydam veriyoruz)
 
   // ——— durum ———
-  late final int alarmIdEffective;              // tek kaynaktan ID
-  final Set<int> allHintIndexes = {};
-  final Set<int> foundIndexes   = {};
-  final Set<int> selectedIndexes = {};
+  late final int alarmIdEffective;
+  final Set<int> hintIndexes   = {};
+  final Set<int> foundIndexes  = {};
+  final Set<int> selected      = {};
   Set<int> currentHint = {};
 
-  bool showHints   = true;
-  int  secondsLeft = 15;
+  bool   showHints   = true;
+  int    secondsLeft = totalSeconds;
   Timer? timeoutTimer;
 
   static const platform = MethodChannel('com.example.alarm/native');
@@ -37,26 +44,21 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
   void initState() {
     super.initState();
     alarmIdEffective = widget.alarmId ?? nativeAlarmId!;
-    debugPrint("GridMemoryGamePage alarmIdEffective (init): $alarmIdEffective");
-
     _generateHints();
-    _startHintPhase(first: true);
-    _startTimeout();
+    _startHint(first: true);
+    _startTimer();
   }
 
-  // ——— oyun mantığı ———
   void _generateHints() {
     final rand = Random();
-    allHintIndexes.clear();
-    while (allHintIndexes.length < hintCount) {
-      allHintIndexes.add(rand.nextInt(gridSize));
+    while (hintIndexes.length < hintCount) {
+      hintIndexes.add(rand.nextInt(gridSize));
     }
   }
 
-  void _startHintPhase({bool first = false}) {
-    currentHint = allHintIndexes.difference(foundIndexes);
-    if (!first) selectedIndexes.clear(); // yeni deneme
-
+  void _startHint({bool first = false}) {
+    currentHint = hintIndexes.difference(foundIndexes);
+    if (!first) selected.clear();
     setState(() => showHints = true);
 
     Future.delayed(hintDuration, () {
@@ -64,41 +66,40 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
     });
   }
 
-  void _startTimeout() {
+  void _startTimer() {
     timeoutTimer?.cancel();
-    timeoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    timeoutTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (secondsLeft == 0) {
-        timer.cancel();
-        _goBackToAlarm();
+        t.cancel();
+        _restartAlarmNative();
       } else {
         setState(() => secondsLeft--);
       }
     });
   }
 
-  void _goBackToAlarm() async {
-    debugPrint("🧪 goBackToAlarm: $alarmIdEffective");
+  void _restartAlarmNative() async {
     try {
       await platform.invokeMethod("restartAlarmFromFlutter", {
         "alarmId": alarmIdEffective,
       });
     } catch (e) {
-      debugPrint("Alarm yeniden başlatılamadı: $e");
+      debugPrint("restartAlarmFromFlutter error → $e");
     }
   }
 
-  void _handleTap(int index) {
-    if (showHints) return;                                      // ipucu açıkken tıklama yok
-    if (selectedIndexes.contains(index) || foundIndexes.contains(index)) return;
+  // ——— etkileşim ———
+  void _handleTap(int idx) {
+    if (showHints ||
+        selected.contains(idx) ||
+        foundIndexes.contains(idx)) return;
 
-    setState(() => selectedIndexes.add(index));
+    setState(() => selected.add(idx));
 
-    // doğru kareyse kaydet
-    if (allHintIndexes.contains(index)) {
-      foundIndexes.add(index);
+    if (hintIndexes.contains(idx)) {
+      foundIndexes.add(idx);
     }
 
-    // HEDEF: tümünü bulduysa Typing ekranına
     if (foundIndexes.length == hintCount) {
       Future.delayed(const Duration(milliseconds: 300), () {
         Navigator.of(context).pushReplacementNamed(
@@ -109,9 +110,8 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
       return;
     }
 
-    // Her 8 hamlede bir kalan ipuçlarını göster
-    if (selectedIndexes.length >= maxClicksBeforeHint) {
-      _startHintPhase();
+    if (selected.length >= clicksPerHint) {
+      _startHint();
     }
   }
 
@@ -121,71 +121,61 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
     super.dispose();
   }
 
-  // ——— UI ———
+  // ———  UI ———
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    final bgColor   = cs.surfaceVariant;
-    final goodColor = cs.tertiary;
-    final hintColor = cs.primary;
-    final neutral   = cs.outlineVariant;
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: bgNavy,
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 12),
-            Text(
-              showHints ? "İPUCU" : "Seç (${secondsLeft}s)",
-              style: Theme.of(context).textTheme.headlineSmall,
+            const SizedBox(height: 14),
+            // progress‑bar sayaç
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: secondsLeft / totalSeconds,
+                  minHeight: 6,
+                  backgroundColor: Colors.white24,
+                  valueColor: const AlwaysStoppedAnimation<Color>(tileHint),
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            // basit bir progress bar
-            LinearProgressIndicator(
-              value: secondsLeft / 15,
-              minHeight: 6,
-              backgroundColor: neutral.withOpacity(.3),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
             Expanded(
               child: GridView.builder(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(22),
                 itemCount: gridSize,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
                 ),
-                itemBuilder: (_, index) {
-                  final bool isFound = foundIndexes.contains(index);
-                  final bool isHint  = showHints && currentHint.contains(index);
-                  final bool isSelected = selectedIndexes.contains(index);
+                itemBuilder: (_, i) {
+                  final bool correct   = foundIndexes.contains(i);
+                  final bool hintNow   = showHints && currentHint.contains(i);
+                  final bool tappedBad = selected.contains(i) && !correct;
 
-                  Color tileColor  = neutral;
-                  double opacity   = 1;
+                  Color color = tileBase;
+                  double opacity = 1;
 
-                  if (isFound) {
-                    tileColor = goodColor;
-                  } else if (isHint) {
-                    tileColor = hintColor;
-                  } else if (isSelected) {
-                    tileColor = cs.errorContainer;
-                    opacity   = .5;
-                  }
+                  if (correct || hintNow)  color = tileHint;
+                  if (tappedBad) { color = tileWrong; opacity = 0.45; }
 
                   return GestureDetector(
-                    onTap: () => _handleTap(index),
+                    onTap: () => _handleTap(i),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
                       decoration: BoxDecoration(
-                        color: tileColor.withOpacity(opacity),
+                        color: color.withOpacity(opacity),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(.15),
-                            blurRadius: 6,
+                            color: Colors.black.withOpacity(0.30),
+                            blurRadius: 7,
                             offset: const Offset(0, 3),
                           )
                         ],
@@ -195,7 +185,6 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
                 },
               ),
             ),
-            const SizedBox(height: 12),
           ],
         ),
       ),
