@@ -1,24 +1,19 @@
-// ────────────────────────────────────────────────────────────────────────
-// main.dart    →  TAM DOSYA (Native Alarm Tetikleme & İzin Ekranı İçin Düzenlendi)
-// ────────────────────────────────────────────────────────────────────────
-
-// ——— Dart / Flutter —
-import 'dart:convert'; // AlarmStorage için
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'dart:convert'; // AlarmStorage
 import 'dart:io' show Platform;
-
+import 'login_page.dart'; // en üste
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-// ——— 3. Parti Paketler —
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
-import 'package:collection/collection.dart'; // firstWhereOrNull için
+import 'package:collection/collection.dart';
 import 'package:alarm/grid_memory_game_page.dart';
-
-// ——— Uygulama dosyaları —
+import 'auth_page.dart';
+import 'good_morning.dart';
 import 'motivation_page.dart';
 import 'alarm_model.dart';
 import 'alarm_storage.dart';
@@ -54,6 +49,12 @@ void setupNativeChannelHandler(BuildContext context) {
     }
   });
 }
+
+
+
+
+
+
 
 
 // ───────── Bildirim / kanal sabitleri ─────────
@@ -137,6 +138,17 @@ class _MainShellState extends State<MainShell> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 // ───────────────────── ANA UYGULAMA GİRİŞ NOKTASI ─────────────────────
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -145,6 +157,9 @@ const platform = MethodChannel('com.example.alarm/native');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // 🔥 Firebase başlatılıyor
+
+  final user = FirebaseAuth.instance.currentUser;
 
   // Gerekirse tarih formatlamayı başlat
   await initializeDateFormatting('tr_TR', null);
@@ -269,6 +284,23 @@ Future<bool> _isAndroid12OrHigher() async {
   return false;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ───────────────────── FLUTTER UYGULAMASI (MyApp Widget) ─────────────────────
 
 class MyApp extends StatelessWidget {
@@ -316,25 +348,39 @@ class MyApp extends StatelessWidget {
         return child!;
       },
       initialRoute: initialRoute,        // <- zaten varolan değişkenin
-      routes: {
-        '/': (_)            => const MainShell(),
-        '/permissions': (_) => const PermissionScreen(),
-        '/typing': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-          final alarmId = args?['alarmId'] as int?;
-          return MotivationTypingPage(alarmId: alarmId);
+        routes: {
+          '/': (_)            => const MainShell(),
+          '/permissions': (_) => const PermissionScreen(),
+          '/typing': (context) {
+            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+            final alarmId = args?['alarmId'] as int?;
+            return MotivationTypingPage(alarmId: alarmId);
+          },
+          '/memory': (context) {
+            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+            final alarmId = args?['alarmId'] as int?;
+            return GridMemoryGamePage(alarmId: alarmId);
+          },
+          '/goodMorning': (_) => const GoodMorningPage(),
+          '/auth': (_) => const AuthPage(),
+          '/login': (_) => const LoginPage(),
+
         },
-        '/memory': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-          final alarmId = args?['alarmId'] as int?;
-          return GridMemoryGamePage(alarmId: alarmId);
-        },
-      },
     );
 
 
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

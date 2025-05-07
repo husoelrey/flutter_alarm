@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'good_morning.dart';
 import 'main.dart'; // 🔔 nativeAlarmId global değişkeni burada tanımlı olmalı
 
 class MotivationTypingPage extends StatefulWidget {
@@ -19,7 +20,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
   String _target = '';
   String _input  = '';
   late Timer _timer;
-  int   _remaining = 10;
+  int   _remaining = 60;
   final _controller = TextEditingController();
 
   @override
@@ -83,9 +84,19 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
       if (id != null && id != -1) {
         _native.invokeMethod('cancelNativeAlarm', {'id': id});
       }
+
+      // önce bu sayfayı kapatıyoruz
       Navigator.of(context).pop();
+
+      // ardından GoodMorningPage sayfasını açıyoruz
+      Future.microtask(() {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const GoodMorningPage()),
+        );
+      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) => WillPopScope(
@@ -171,7 +182,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
                       width: 90,
                       height: 90,
                       child: CircularProgressIndicator(
-                        value: _remaining / 10,
+                        value: _remaining / 60,
                         strokeWidth: 6,
                         backgroundColor: Colors.white24,
                         valueColor: const AlwaysStoppedAnimation(Colors.tealAccent),
