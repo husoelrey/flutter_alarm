@@ -1,19 +1,23 @@
 // lib/alarm_model.dart
-import 'dart:convert'; // JSON dönüşümü için
 import 'package:flutter/material.dart';
-import 'package:collection/collection.dart';
-// Haftanın günleri için sabitler (DateTime.monday = 1, ..., DateTime.sunday = 7)
+
+/// Haftanın günleri (DateTime: 1 = Pzt, ..., 7 = Paz)
 const List<int> allWeekdays = [
-  DateTime.monday, DateTime.tuesday, DateTime.wednesday, DateTime.thursday,
-  DateTime.friday, DateTime.saturday, DateTime.sunday
+  DateTime.monday,
+  DateTime.tuesday,
+  DateTime.wednesday,
+  DateTime.thursday,
+  DateTime.friday,
+  DateTime.saturday,
+  DateTime.sunday,
 ];
 
 class AlarmInfo {
   final int id;
-  DateTime dateTime; // Artık final değil, sonraki çalıştırmayı güncellemek için
-  String? label; // Alarm etiketi (opsiyonel)
-  List<int> repeatDays; // Tekrarlama günleri (1-7), boş ise tek seferlik
-  bool isActive; // Alarm aktif mi?
+  DateTime dateTime; // Alarmın zamanı (güncellenebilir)
+  String? label; // Etiket (isteğe bağlı)
+  List<int> repeatDays; // Haftanın günleri (1-7 arası)
+  bool isActive; // Aktiflik durumu
 
   AlarmInfo({
     required this.id,
@@ -25,59 +29,50 @@ class AlarmInfo {
 
   TimeOfDay get timeOfDay => TimeOfDay.fromDateTime(dateTime);
 
-  // Tekrarlama durumunu metin olarak döndüren yardımcı fonksiyon
-  /// Seçilen günlerin kısaltılmış metni
+  /// Alarm tekrar günlerini metinle gösterir
   String get repeatDaysText {
     if (repeatDays.isEmpty) return 'Tek seferlik';
-
-    // ❌ repeatDays.sort();  // orijinal sorunlu satır
-    // ✅ önce modifiye edilebilir bir kopya al
     final List<int> days = List<int>.from(repeatDays)..sort();
-
     const dayShort = ['', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
     return days.map((d) => dayShort[d]).join(', ');
   }
 
-
-  // JSON'a dönüştürme (shared_preferences için)
+  /// JSON’a dönüştür
   Map<String, dynamic> toJson() => {
     'id': id,
-    'dateTime': dateTime.toIso8601String(), // Tarihi string olarak kaydet
+    'dateTime': dateTime.toIso8601String(),
     'label': label,
-    'repeatDays': repeatDays, // Liste doğrudan kaydedilebilir
+    'repeatDays': repeatDays,
     'isActive': isActive,
   };
 
-  // JSON'dan oluşturma (shared_preferences için)
+  /// JSON’dan AlarmInfo oluştur
   factory AlarmInfo.fromJson(Map<String, dynamic> json) => AlarmInfo(
     id: json['id'] as int,
-    // Kaydedilen string'den DateTime'a geri dönüştür
     dateTime: DateTime.parse(json['dateTime'] as String),
     label: json['label'] as String?,
-    // JSON listesini List<int> olarak al
     repeatDays: List<int>.from(json['repeatDays'] as List),
     isActive: json['isActive'] as bool,
   );
 
-  // Sonraki alarm zamanını hesaplama
+  /// Sonraki tetiklenme zamanını hesapla
   DateTime calculateNextAlarmTime(DateTime now) {
-    // Eğer tekrar etmiyorsa veya zaten gelecek bir zamandaysa, mevcut zamanı kullan
-    if (repeatDays.isEmpty || dateTime.isAfter(now)) {
-      // Ancak tek seferlik ve geçmişteyse, sonraki güne atla (ilk kurulum için)
-      if (repeatDays.isEmpty && dateTime.isBefore(now)) {
-        return dateTime.add(Duration(days: 1));
-      }
-      return dateTime;
+    if (repeatDays.isEmpty) {
+      if (dateTime.isAfter(now)) return dateTime;
+      return dateTime.add(const Duration(days: 1));
     }
 
-    // Tekrarlıyorsa ve zamanı geçmişse, sonraki uygun günü bul
-    DateTime nextAlarm = dateTime;
-    while (nextAlarm.isBefore(now) || !repeatDays.contains(nextAlarm.weekday)) {
-      nextAlarm = nextAlarm.add(Duration(days: 1));
+    DateTime next = DateTime(now.year, now.month, now.day, timeOfDay.hour, timeOfDay.minute);
+
+    for (int i = 0; i < 7; i++) {
+      int weekday = next.weekday;
+      if (repeatDays.contains(weekday) && next.isAfter(now)) {
+        return next;
+      }
+      next = next.add(const Duration(days: 1));
     }
-    return DateTime(nextAlarm.year, nextAlarm.month, nextAlarm.day, timeOfDay.hour, timeOfDay.minute);
+
+    // Hiçbir şey bulunamazsa (güvenlik için, teorik olarak gerekmez)
+    return next;
   }
 }
-
-// Listeleri karşılaştırmak için (pubspec'e collection eklenmeli)
-// ignore: depend_on_referenced_packages

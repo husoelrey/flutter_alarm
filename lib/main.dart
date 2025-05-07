@@ -5,15 +5,12 @@
 // ——— Dart / Flutter —
 import 'dart:convert'; // AlarmStorage için
 import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:flutter/foundation.dart';           // debugPrint
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';             // MethodChannel
-import 'motivation_page.dart';
-// ——— Üçüncü-taraf paketler —
-import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
+// ——— 3. Parti Paketler —
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,11 +18,26 @@ import 'package:intl/intl.dart';
 import 'package:collection/collection.dart'; // firstWhereOrNull için
 
 // ——— Uygulama dosyaları —
+import 'motivation_page.dart';
 import 'alarm_model.dart';
 import 'alarm_storage.dart';
 import 'motivation_typing_page.dart';
-import 'permission_screen.dart'; // İzin ekranı
+import 'permission_screen.dart';
 
+int? nativeAlarmId;
+
+const _native = MethodChannel('com.example.alarm/native');
+
+void _registerNativeHandler(BuildContext ctx) {
+  _native.setMethodCallHandler((call) async {
+    if (call.method == 'openTypingPage') {
+      final id = call.arguments['alarmId'] as int?;
+      if (id != null && ctx.mounted) {
+        Navigator.of(ctx).pushNamed('/typing', arguments: {'alarmId': id});
+      }
+    }
+  });
+}
 
 void setupNativeChannelHandler(BuildContext context) {
   const MethodChannel nativeChannel = MethodChannel('com.example.alarm/native');
@@ -34,14 +46,12 @@ void setupNativeChannelHandler(BuildContext context) {
     if (call.method == "openTypingPage") {
       final alarmId = call.arguments["alarmId"] as int?;
       if (alarmId != null && context.mounted) {
+        nativeAlarmId = alarmId; // 🔹 BURASI EKLENDİ
         Navigator.of(context).pushNamed("/typing", arguments: {"alarmId": alarmId});
       }
     }
   });
 }
-
-
-
 
 
 // ───────── Bildirim / kanal sabitleri ─────────

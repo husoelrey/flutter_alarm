@@ -3,156 +3,196 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'main.dart'; // 🔔 nativeAlarmId global değişkeni burada tanımlı olmalı
+
 class MotivationTypingPage extends StatefulWidget {
   final int? alarmId;
-  const MotivationTypingPage({Key? key, this.alarmId}) : super(key: key);
+  const MotivationTypingPage({super.key, this.alarmId});
 
   @override
-  _MotivationTypingPageState createState() => _MotivationTypingPageState();
+  State<MotivationTypingPage> createState() => _MotivationTypingPageState();
 }
 
 class _MotivationTypingPageState extends State<MotivationTypingPage> {
-  static const _nativeChannel = MethodChannel('com.example.alarm/native');
+  static const _native = MethodChannel('com.example.alarm/native');
 
-  late String targetSentence;
-  String userInput = '';
-  Timer? countdownTimer;
-  int remainingSeconds = 10; // test için kısa tut
-
-  final TextEditingController _controller = TextEditingController();
+  String _target = '';
+  String _input  = '';
+  late Timer _timer;
+  int   _remaining = 10;
+  final _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadRandomMotivation();
+    _pickSentence();
     _startTimer();
-
-    // Sistem çubuklarını gizle
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
-  Future<void> _loadRandomMotivation() async {
-    final prefs = await SharedPreferences.getInstance();
-    final motivations = prefs.getStringList('motivations') ?? [];
-
-    if (motivations.isEmpty) {
-      targetSentence = "Bugün harika bir gün olacak.";
-    } else {
-      motivations.shuffle();
-      targetSentence = motivations.first;
-    }
-
-    setState(() {});
-  }
-
-  void _startTimer() {
-    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (remainingSeconds == 0) {
-        timer.cancel();
-        _restartAlarm(); // süre bitti, alarm yeniden çalmalı
-      } else {
-        setState(() => remainingSeconds--);
-      }
-    });
-  }
-
-  void _restartAlarm() {
-    if (widget.alarmId != null) {
-      _nativeChannel.invokeMethod("restartAlarmFromFlutter", {
-        "alarmId": widget.alarmId,
-      });
-    }
-    Navigator.of(context).pop(); // sayfayı kapat
-  }
-
-  void _checkInput(String value) {
-    setState(() => userInput = value);
-    if (userInput == targetSentence) {
-      countdownTimer?.cancel();
-      Navigator.of(context).pop(); // başarılı tamamlandı
-    }
-  }
   @override
   void dispose() {
-    countdownTimer?.cancel();
-
-    // 👇 Bu eksik: kullanıcı yazmadan çıkarsa alarm tekrar çalsın
-    if (userInput != targetSentence && widget.alarmId != null) {
-      _nativeChannel.invokeMethod("restartAlarmFromFlutter", {
-        "alarmId": widget.alarmId,
-      });
-    }
-
+    _timer.cancel();
+    if (_input != _target) _restartAlarm();
     _controller.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
+  Future<void> _pickSentence() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('motivations') ?? [];
+    _target = (list..shuffle()).isEmpty
+        ? 'Bugün harika bir gün olacak.'
+        : list.first;
+    if (mounted) setState(() {});
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_remaining == 0) {
+        _timer.cancel();
+        _restartAlarm();
+      } else {
+        setState(() => _remaining--);
+      }
+    });
+  }
+
+  void _restartAlarm() async {
+    final int? id = widget.alarmId ?? nativeAlarmId;
+    if (id == null || id == -1) {
+      debugPrint("❌ alarmId null veya -1 olduğu için restart yapılamadı.");
+      return;
+    }
+
+    try {
+      debugPrint("🔁 restartAlarmFromFlutter çağrılıyor → ID=$id");
+      await _native.invokeMethod('restartAlarmFromFlutter', {'alarmId': id});
+      debugPrint("✅ restartAlarmFromFlutter invokeMethod başarıyla gönderildi.");
+    } catch (e) {
+      debugPrint("❌ restartAlarmFromFlutter invokeMethod başarısız: $e");
+    }
+  }
+
+  void _onChanged(String v) {
+    setState(() => _input = v);
+    if (_input == _target) {
+      _timer.cancel();
+      final int? id = widget.alarmId ?? nativeAlarmId;
+      if (id != null && id != -1) {
+        _native.invokeMethod('cancelNativeAlarm', {'id': id});
+      }
+      Navigator.of(context).pop();
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // geri tuşunu engelle
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          title: const Text('Uyanma Görevi'),
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          automaticallyImplyLeading: false,
+  Widget build(BuildContext context) => WillPopScope(
+    onWillPop: () async => false,
+    child: Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF221B36), Color(0xFF0D0B14)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        body: targetSentence.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+        padding: const EdgeInsets.all(24),
+        child: SafeArea(
+          child: _target.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Bu cümleyi yaz:',
-                style: TextStyle(fontSize: 20, color: Colors.grey[300]),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                children: List.generate(targetSentence.length, (i) {
-                  final correct = i < userInput.length &&
-                      userInput[i] == targetSentence[i];
-                  final attempted = i < userInput.length;
-                  return Text(
-                    targetSentence[i],
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: correct
-                          ? Colors.white
-                          : attempted
-                          ? Colors.red
-                          : Colors.grey[700],
-                    ),
-                  );
-                }),
-              ),
               const SizedBox(height: 24),
-              TextField(
-                autofocus: true,
-                controller: _controller,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Cümleyi buraya yaz',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
+              const Text(
+                '⏰  Uyanma Görevi',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              Center(
+                child: RichText(
+                  text: TextSpan(
+                    children: List.generate(_target.length, (i) {
+                      final correct = i < _input.length && _input[i] == _target[i];
+                      final attempted = i < _input.length;
+                      return TextSpan(
+                        text: _target[i],
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontFamily: 'FiraCode',
+                          letterSpacing: 0.5,
+                          color: correct
+                              ? Colors.tealAccent
+                              : attempted
+                              ? Colors.redAccent
+                              : Colors.white54,
+                        ),
+                      );
+                    }),
                   ),
                 ),
-                onChanged: _checkInput,
               ),
+
+              const SizedBox(height: 32),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                cursorColor: Colors.tealAccent,
+                style: const TextStyle(color: Colors.white, fontSize: 20),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white12,
+                  hintText: 'Buraya yaz…',
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: _onChanged,
+              ),
+
               const Spacer(),
-              Text(
-                'Kalan Süre: $remainingSeconds sn',
-                style: TextStyle(color: Colors.grey[400]),
+
+              Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: CircularProgressIndicator(
+                        value: _remaining / 10,
+                        strokeWidth: 6,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation(Colors.tealAccent),
+                      ),
+                    ),
+                    Text(
+                      '$_remaining',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.tealAccent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
