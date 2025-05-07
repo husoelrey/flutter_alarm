@@ -48,7 +48,7 @@ class _PermissionScreenState extends State<PermissionScreen> {
     if (mounted) setState(() => _isLoading = false);
 
     if (allGranted) {
-      if (mounted) Navigator.of(context).pushReplacementNamed('/');
+      if (mounted) Navigator.of(context).pushReplacementNamed('/splash');
     } else {
       if (mounted) _showPermissionDeniedDialog(context);
     }
