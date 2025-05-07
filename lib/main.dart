@@ -5,12 +5,15 @@
 // ——— Dart / Flutter —
 import 'dart:convert'; // AlarmStorage için
 import 'dart:io' show Platform;
+import 'package:flutter/services.dart';
 
 import 'package:flutter/foundation.dart';           // debugPrint
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';             // MethodChannel
 import 'motivation_page.dart';
 // ——— Üçüncü-taraf paketler —
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -20,7 +23,26 @@ import 'package:collection/collection.dart'; // firstWhereOrNull için
 // ——— Uygulama dosyaları —
 import 'alarm_model.dart';
 import 'alarm_storage.dart';
+import 'motivation_typing_page.dart';
 import 'permission_screen.dart'; // İzin ekranı
+
+
+void setupNativeChannelHandler(BuildContext context) {
+  const MethodChannel nativeChannel = MethodChannel('com.example.alarm/native');
+
+  nativeChannel.setMethodCallHandler((call) async {
+    if (call.method == "openTypingPage") {
+      final alarmId = call.arguments["alarmId"] as int?;
+      if (alarmId != null && context.mounted) {
+        Navigator.of(context).pushNamed("/typing", arguments: {"alarmId": alarmId});
+      }
+    }
+  });
+}
+
+
+
+
 
 // ───────── Bildirim / kanal sabitleri ─────────
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -101,6 +123,8 @@ class _MainShellState extends State<MainShell> {
 // ───────────────────── ANA UYGULAMA GİRİŞ NOKTASI ─────────────────────
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+const platform = MethodChannel('com.example.alarm/native');
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -180,7 +204,6 @@ Future<bool> _isAndroid12OrHigher() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.initialRoute, this.alarmPayload});
 
-
   final String initialRoute;
   final String? alarmPayload;
 
@@ -201,12 +224,20 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) {
+        setupNativeChannelHandler(context); // 🔹 EKLENEN KISIM
+        return child!;
+      },
       initialRoute: initialRoute,
       routes: {
         '/': (_)  => const MainShell(),
-        '/permissions': (_) => const PermissionScreen(), // PermissionScreen widget'ını kullan
+        '/permissions': (_) => const PermissionScreen(),
+        '/typing': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final alarmId = args?['alarmId'] as int?;
+          return MotivationTypingPage(alarmId: alarmId);
+        },
       },
-      // onGenerateRoute: Artık /ring rotası Flutter'da ele alınmıyor.
       onGenerateRoute: (settings) {
         debugPrint("onGenerateRoute called for ${settings.name} - No specific handler.");
         return null;
@@ -214,6 +245,10 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
+
+
 
 // ───────────────── ANA SAYFA VE DİĞER WIDGETLAR ─────────────────
 
@@ -231,11 +266,12 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
   @override
   void initState() {
     super.initState();
-    // Artık main kontrol ettiği için buradaki kontrol kaldırılabilir veya
-    // sadece bir loglama/doğrulama amaçlı kalabilir.
-    // Şimdilik kaldırıyorum, eğer main'deki yönlendirme çalışıyorsa gerek yok.
-    // _checkPermissionsAndLoad();
-    _loadAlarmsAndReschedule(); // Doğrudan alarmları yükle
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setupNativeChannelHandler(context);
+    });
+
+    _loadAlarmsAndReschedule();
   }
 
   // Bu fonksiyon artık initState'ten çağrılmıyor ama referans olarak kalabilir.

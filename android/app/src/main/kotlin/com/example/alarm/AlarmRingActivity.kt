@@ -107,11 +107,19 @@ class AlarmRingActivity : AppCompatActivity() {
         // --- Kapat Butonu Listener ---
         buttonDismiss.setOnClickListener {
             Log.d(TAG, "Dismiss button clicked for ID: $alarmId")
-            // TODO: Tek seferlik alarmı pasifleştirme kodu buraya eklenecek (Adım 3)
-            // deactivateOneShotAlarmInPrefs(alarmId)
-            stopRingService(alarmId) // ID'yi stop'a da gönderelim
-            finishAndRemoveTask()
+
+            stopRingService(alarmId)
+
+            // Flutter uygulamasını yazı ekranı ile başlat
+            val flutterIntent = Intent(this, MainActivity::class.java).apply {
+                putExtra("route", "/typing")
+                putExtra("alarmId", alarmId)
+            }
+            startActivity(flutterIntent)
+
+            finish()
         }
+
 
         Log.d(TAG, "onCreate finished successfully")
     }
