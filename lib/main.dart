@@ -1,3 +1,5 @@
+import 'package:alarm/register_page.dart';
+import 'package:alarm/splash_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:convert'; // AlarmStorage
@@ -148,6 +150,7 @@ class _MainShellState extends State<MainShell> {
 
 
 
+                ///       MAINNNNNNNNNNNNNNN      \\\
 
 // ───────────────────── ANA UYGULAMA GİRİŞ NOKTASI ─────────────────────
 
@@ -158,6 +161,7 @@ const platform = MethodChannel('com.example.alarm/native');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // 🔥 Firebase başlatılıyor
+  final isLoggedIn = FirebaseAuth.instance.currentUser != null; // ✅ 3️⃣ ŞİMDİ kontrol et
 
   final user = FirebaseAuth.instance.currentUser;
 
@@ -266,14 +270,38 @@ Future<void> main() async {
   // await AndroidAlarmManager.initialize(); // KALDIRILDI
 
   // --- Uygulamayı Başlat ---
+// Firebase oturum açık mı kontrolü
+
+
   runApp(
     MyApp(
-      // İzinler tamamsa '/', eksikse '/permissions' rotasını başlat
-      initialRoute: allCriticalPermissionsGranted ? '/' : '/permissions',
-      // alarmPayload: openedViaNotifPayload,
+      initialRoute: !allCriticalPermissionsGranted
+          ? '/permissions'
+          : '/splash', // 🔍 splash login kontrolünü yapacak
     ),
   );
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Android S (API 31) veya üstü olup olmadığını kontrol etme (izin kontrolü için)
 Future<bool> _isAndroid12OrHigher() async {
@@ -364,6 +392,9 @@ class MyApp extends StatelessWidget {
           '/goodMorning': (_) => const GoodMorningPage(),
           '/auth': (_) => const AuthPage(),
           '/login': (_) => const LoginPage(),
+          '/splash': (_) => const SplashPage(),
+          '/register': (_) => const RegisterPage(),
+
 
         },
     );
