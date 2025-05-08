@@ -1,16 +1,96 @@
-# alarm
+# ⏰ Flutter Alarm Uygulaması
+Kullanıcıyı tek seferde ve bilinçli şekilde uyandırmak için tasarlanmış, modern bir **alarm uygulaması**. Erteleme tuşu içermeyen yapısı ve interaktif uyanma görevleriyle klasik alarm uygulamalarından ayrılır. Uygulamanın amacı sadece uyandırmak değil — aynı zamanda güne zihinsel olarak hazır başlamanı sağlamak.
 
-A new Flutter project.
+## 🚀 Özellikler
 
-## Getting Started
+- 🔔 **Alarm Kurma:** Tek seferlik veya tekrar eden alarmlar oluşturabilirsiniz.
+- 📱 **Flutter ↔ Native Entegrasyonu:** Android sistem alarmı doğrudan native (Kotlin) kod ile tetiklenir.
+- 🧠 **Uyanma Görevleri:** Alarmı kapatmak için kullanıcıyı zihinsel olarak aktif hâle getiren mini görevler:
+    - Hafıza oyunu (kareleri ezberle ve bul)
+    - Yazı kopyalama (motivasyon cümleleri)
+- 🗝️ **Tam Ekran Alarm:** Alarm çaldığında ekran uyanır ve doğrudan RingActivity (Kotlin) açılır.
+- 🔐 **Firebase Authentication:** Kullanıcılar e‑posta ve şifre ile giriş yapabilir.
+- 💭 **Motivasyon Sayfası:** Uygulama içinde düzenlenebilir motivasyon cümleleri saklanır.
+- 🌙 **Uyku Farkındalığı Sayfası:** Uyku kalitesini artırmaya yönelik bilimsel bilgiler ve öneriler içerir.
+- ✅ **İzin Kontrolü ve Yönlendirme:** Alarm çalışabilmesi için gerekli Android izinleri başta istenir.
+- 🧠 **REM ve Derin Uyku Bilgilendirmesi:** Uykunun biyolojik döngüleri hakkında farkındalık sağlar.
+- ☁️ **Firebase ile Veri Senkronizasyonu (opsiyonel):** Giriş yapan kullanıcılar farklı cihazlarda senkronize olabilir (geliştirmeye açık).
 
-This project is a starting point for a Flutter application.
+## 🔧 Kullanılan Teknolojiler
 
-A few resources to get you started if this is your first Flutter project:
+- **Flutter & Dart**
+- **Kotlin (Native Android Alarm)**
+- **Firebase (Authentication)**
+- **Shared Preferences** (lokal veri saklama)
+- **Flutter Local Notifications**
+- **Permission Handler**
+- **Android Alarm Manager Plus** (yalnızca örnekler için)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 📲 Ekran Görüntüleri
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Ana Sayfa
+![Ana Sayfa](screenshots/1_home.jpg)
+
+### Motivasyon Ekleme
+![Motivasyon Ekleme](screenshots/2_add_motivations.jpg)
+
+### Farkındalık Listesi
+![Farkındalıklar](screenshots/3_awarenesses.jpg)
+
+### Farkındalık Detayı
+![Farkındalık Detay](screenshots/4_awareness_details.jpg)
+
+### Hafıza Oyunu
+![Hafıza Oyunu](screenshots/5_memory_game.jpg)
+
+### Motivasyon Yazma Görevi
+![Yazı Görevi](screenshots/6_motivation_typing.jpg)
+
+---
+## 📌 Bilimsel Temelli Farkındalıklar
+- Uygulama içeriği, uyku kalitesini artırmak ve sağlıklı alışkanlıklar kazandırmak için seçilmiş bilimsel öneriler içerir.
+- Her içerik kısa bir özetle başlar, detay ekranında anlaşılır ve teknik bilgiler sunar.
+
+## 🛠️ Kurulum
+
+1. Firebase projesi oluştur ve Android'i ekle.
+2. `google-services.json` dosyasını `android/app/` klasörüne yerleştir.
+3. `flutter pub get` çalıştır.
+4. Android telefon bağlayarak `flutter run`.
+
+## 📁 Dizin Yapısı (Özet)
+lib/
+├── main.dart # Uygulama başlatıcısı, native handler’lar
+├── motivation_page.dart # Motivasyon listesi
+├── motivation_typing_page.dart # Yazı yazma görevi
+├── grid_memory_game_page.dart # Hafıza oyunu
+├── good_morning.dart # Uyanış sonrası ekran
+├── login_page.dart # Giriş ekranı
+├── awareness_page.dart # Uyku farkındalığı sayfası
+└── permission_screen.dart # Android izinleri
+
+
+## 🧪 Test Notları
+
+- Alarm, Android 8+ cihazlarda test edilmiştir.
+- Uygulama, kilit ekranında tam ekran açılabilmektedir.
+- Firebase yapılandırması doğru yapılmazsa uygulama açılmaz, hata verir.
+
+## 🔐 Kimlik Doğrulama
+- Kullanıcı kayıtları Firebase Authentication ile tutulur.
+
+- Yeni kullanıcılar mail/şifre ile kayıt olur, giriş yapabilir.
+
+- Oturum açık kalır, uygulama açılışında kullanıcı durumuna göre yönlendirme yapılır.
+
+
+## 📄 Lisans
+Dilediğiniz gibi kullanabilir ve geliştirebilirsiniz.
+
+---
+
+## Hazırlayan: [Hüseyin Erekmen]
+https://github.com/husoelrey
+https://www.linkedin.com/in/huseyinerekmen/
+
+
