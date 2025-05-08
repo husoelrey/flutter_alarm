@@ -63,9 +63,8 @@ class _PermissionScreenState extends State<PermissionScreen> {
         title: const Text('İzinler Eksik veya Ayar Gerekli'),
         content: const SingleChildScrollView(
           child: Text(
-            '🔔 Alarmların güvenilir çalışabilmesi için gerekli izinler verilmelidir.\n\n'
-                '⚡️ Özellikle "Pil Optimizasyonu" ve "Üzerinde Gösterme" izinleri için ayarlara girmeniz gerekebilir.\n\n'
-                '⚡️ Uygulama ayarlarını açarak eksik izinleri tamamlayabilirsiniz.',
+                '⚡️ Özellikle "Pil Optimizasyonu", "Diğer Uygulamaların Üzerinde Gösterme" ve "Kilit Ekranında Gösterme" izinleri ÇOK KRİTİK.\n\n'
+                '⚡️ Uygulama ayarlarını açarak(seni yönlendireceğim) eksik izinleri oradan diğer izinler gibi bir başlık altından ver',
             style: TextStyle(height: 1.4),
           ),
         ),
