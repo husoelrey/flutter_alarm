@@ -1,7 +1,4 @@
-// lib/alarm_model.dart
 import 'package:flutter/material.dart';
-
-/// Haftanın günleri (DateTime: 1 = Pzt, ..., 7 = Paz)
 const List<int> allWeekdays = [
   DateTime.monday,
   DateTime.tuesday,
@@ -14,10 +11,10 @@ const List<int> allWeekdays = [
 
 class AlarmInfo {
   final int id;
-  DateTime dateTime; // Alarmın zamanı (güncellenebilir)
-  String? label; // Etiket (isteğe bağlı)
-  List<int> repeatDays; // Haftanın günleri (1-7 arası)
-  bool isActive; // Aktiflik durumu
+  DateTime dateTime; // Alarmın zamanı
+  String? label; // Etiket
+  List<int> repeatDays; // Haftanın günleri
+  bool isActive; // Aktiflik
 
   AlarmInfo({
     required this.id,
@@ -71,8 +68,6 @@ class AlarmInfo {
       }
       next = next.add(const Duration(days: 1));
     }
-
-    // Hiçbir şey bulunamazsa (güvenlik için, teorik olarak gerekmez)
     return next;
   }
 }

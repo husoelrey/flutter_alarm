@@ -15,20 +15,20 @@ class GridMemoryGamePage extends StatefulWidget {
 }
 
 class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
-  // ——— parametreler ———
+  ///parametreler
   static const int gridSize = 25;
   static const int hintCount = 8;
   static const int clicksPerHint = 8;
   static const Duration hintDuration = Duration(seconds: 3);
   static const int totalSeconds = 35;
 
-  // ——— renk paleti ———
+  /// renk paleti
   static const Color bgNavy = Color(0xFF0A0D2B);
   static const Color tileBase = Color(0xFF1A1E3F);
   static const Color tileHint = Colors.tealAccent;
   static const Color tileWrong = Color(0xFFE53935);
 
-  // ——— durum ———
+  ///durum
   int? alarmIdEffective;
   final Set<int> hintIndexes = {};
   final Set<int> foundIndexes = {};

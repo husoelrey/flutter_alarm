@@ -26,7 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text,
       );
 
-      // ✅ Kayıt başarılı → Login sayfasına yönlendir
+      // Kayıt başarılı → Login sayfasına yönlendir
       if (context.mounted) {
         Navigator.of(context).pushReplacementNamed('/login');
       }
@@ -111,7 +111,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () {
                   Navigator.of(context).pushReplacementNamed('/login');
                 },
-                child: const Text('Zaten hesabın var mı? Giriş yap'),
+                child: const Text('Hesabın var mı? Giriş yap'),
               ),
             ],
           ),

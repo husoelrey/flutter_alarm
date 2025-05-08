@@ -1,4 +1,3 @@
-// lib/permission_helper.dart
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -35,9 +34,9 @@ class _PermissionHelperState extends State<PermissionHelper> {
       if (await Permission.notification.isDenied) Permission.notification,
     ].request();
 
-    await openAppSettings();          // ayar sayfasına götür
+    await openAppSettings(); // ayar sayfasına götür!!!!
     await Future.delayed(const Duration(seconds: 2));
-    _check();                         // geri dönünce tekrar kontrol et
+    _check();   // geri dönünce tekrar kontrol et!!
   }
 
   @override
@@ -54,10 +53,12 @@ class _PermissionHelperState extends State<PermissionHelper> {
               const Icon(Icons.alarm, size: 96, color: Colors.deepPurple),
               const SizedBox(height: 24),
               const Text(
-                'Kesintisiz alarm için aşağıdaki izinleri açman gerekiyor:',
+                'Aşağıdaki izinleri MUTLAKA açman gerekiyor:',
                 style: TextStyle(fontSize: 18),
                 textAlign: TextAlign.center,
+
               ),
+
               const SizedBox(height: 16),
               _bullet('• Bildirim gösterme'),
               _bullet('• Tam zamanlı alarm kurma'),
