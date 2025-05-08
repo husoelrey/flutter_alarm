@@ -136,7 +136,9 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
   // ———  UI ———
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async => false,
+    child: Scaffold(
       backgroundColor: bgNavy,
       body: SafeArea(
         child: Column(
@@ -200,6 +202,7 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
           ],
         ),
       ),
+    )
     );
   }
 }
