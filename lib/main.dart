@@ -2,6 +2,7 @@ import 'package:alarm/register_page.dart';
 import 'package:alarm/splash_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // AlarmStorage
 import 'dart:io' show Platform;
 import 'login_page.dart'; // en üste
@@ -22,6 +23,9 @@ import 'alarm_model.dart';
 import 'alarm_storage.dart';
 import 'motivation_typing_page.dart';
 import 'permission_screen.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:audioplayers/audioplayers.dart';
+
 
 int? nativeAlarmId;
 
@@ -416,7 +420,6 @@ class MyApp extends StatelessWidget {
 
 
 
-
 // ───────────────── ANA SAYFA VE DİĞER WIDGETLAR ─────────────────
 
 class AlarmHomePage extends StatefulWidget {
@@ -427,6 +430,32 @@ class AlarmHomePage extends StatefulWidget {
 }
 
 class _AlarmHomePageState extends State<AlarmHomePage> {
+  final AudioPlayer player = AudioPlayer();
+
+
+
+  Future<void> _pickAndSaveSound() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['mp3', 'wav', 'ogg'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final path = result.files.single.path!;
+      debugPrint("🎵 Seçilen dosya (kaydedildi): $path");
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('selected_alarm_sound', path);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Alarm sesi kaydedildi')),
+        );
+      }
+    }
+  }
+
+
   List<AlarmInfo> _alarms = [];
   bool _isLoading = true;
 
@@ -463,6 +492,10 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     _loadAlarmsAndReschedule();
   }
   */
+
+
+
+
 
   Future<void> _loadAlarmsAndReschedule() async {
     // İzinlerin burada tekrar kontrol edilmesi GEREKLİ DEĞİL,
@@ -587,11 +620,16 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
       debugPrint(
           "Requesting native schedule: ID ${alarm.id}, Time: ${alarm.dateTime.millisecondsSinceEpoch}");
       try {
+        final prefs = await SharedPreferences.getInstance();
+        final soundPath = prefs.getString('selected_alarm_sound') ?? "";
+
         await _nativeChannel.invokeMethod('scheduleNativeAlarm', {
           'id': alarm.id,
           'timeInMillis': alarm.dateTime.millisecondsSinceEpoch,
           'isRepeating': alarm.repeatDays.isNotEmpty,
+          'soundPath': soundPath,
         });
+
         debugPrint("Native schedule request successful for ID: ${alarm.id}");
         return true;
       } catch (e, s) {
@@ -635,7 +673,13 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     }
   }
 
-  // --- Ana Sayfa Build Metodu ---
+
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -650,120 +694,143 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _alarms.isEmpty
-          ? Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.alarm_off, size: 80, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                'Henüz alarm kurulmadı.\nEklemek için sağ üstteki + ikonuna dokunun.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-            ],
-          ))
-          : ListView.separated(
-        itemCount: _alarms.length,
-        separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
-        itemBuilder: (context, index) {
-          final alarm = _alarms[index];
-          final now = DateTime.now();
-          final nextOccurrence = alarm.dateTime;
-
-          String nextTimeString;
-          if (!alarm.isActive) {
-            nextTimeString = "Pasif";
-          } else if (nextOccurrence.isBefore(now) && alarm.repeatDays.isEmpty) {
-            nextTimeString = "Pasif (Geçmiş)";
-          } else {
-            final isToday = now.year == nextOccurrence.year && now.month == nextOccurrence.month && now.day == nextOccurrence.day;
-            final isTomorrow = now.add(const Duration(days: 1)).year == nextOccurrence.year && now.add(const Duration(days: 1)).month == nextOccurrence.month && now.add(const Duration(days: 1)).day == nextOccurrence.day;
-            if (isToday) {
-              nextTimeString = 'Bugün ${DateFormat('HH:mm').format(nextOccurrence)}';
-            } else if (isTomorrow) {
-              nextTimeString = 'Yarın ${DateFormat('HH:mm').format(nextOccurrence)}';
-            } else {
-              nextTimeString = DateFormat('dd MMM E, HH:mm', 'tr_TR').format(nextOccurrence);
-            }
-          }
-
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            leading: Icon(
-              alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
-              color: alarm.isActive ? Theme.of(context).colorScheme.primary : Colors.grey,
-              size: 30,
-            ),
-            title: Text(
-              DateFormat('HH:mm').format(alarm.dateTime), // DateTime kullanılıyor
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: alarm.isActive ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[500],
-                decoration: !alarm.isActive ? TextDecoration.lineThrough : null,
-                decorationColor: Colors.grey[500],
+      body: Column(
+        children: [
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: ElevatedButton.icon(
+              onPressed: _pickAndSaveSound,
+              icon: const Icon(Icons.music_note),
+              label: const Text("Alarm sesi ekle"),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+                textStyle: const TextStyle(fontSize: 16),
               ),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (alarm.label != null && alarm.label!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      alarm.label!,
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: alarm.isActive ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey),
-                      overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _alarms.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.alarm_off, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Henüz alarm kurulmadı.\nEklemek için sağ üstteki + ikonuna dokunun.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+                : ListView.separated(
+              itemCount: _alarms.length,
+              separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
+              itemBuilder: (context, index) {
+                final alarm = _alarms[index];
+                final now = DateTime.now();
+                final nextOccurrence = alarm.dateTime;
+
+                String nextTimeString;
+                if (!alarm.isActive) {
+                  nextTimeString = "Pasif";
+                } else if (nextOccurrence.isBefore(now) && alarm.repeatDays.isEmpty) {
+                  nextTimeString = "Pasif (Geçmiş)";
+                } else {
+                  final isToday = now.year == nextOccurrence.year && now.month == nextOccurrence.month && now.day == nextOccurrence.day;
+                  final isTomorrow = now.add(const Duration(days: 1)).year == nextOccurrence.year && now.add(const Duration(days: 1)).month == nextOccurrence.month && now.add(const Duration(days: 1)).day == nextOccurrence.day;
+                  if (isToday) {
+                    nextTimeString = 'Bugün ${DateFormat('HH:mm').format(nextOccurrence)}';
+                  } else if (isTomorrow) {
+                    nextTimeString = 'Yarın ${DateFormat('HH:mm').format(nextOccurrence)}';
+                  } else {
+                    nextTimeString = DateFormat('dd MMM E, HH:mm', 'tr_TR').format(nextOccurrence);
+                  }
+                }
+
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                  leading: Icon(
+                    alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
+                    color: alarm.isActive ? Theme.of(context).colorScheme.primary : Colors.grey,
+                    size: 30,
+                  ),
+                  title: Text(
+                    DateFormat('HH:mm').format(alarm.dateTime),
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: alarm.isActive ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[500],
+                      decoration: !alarm.isActive ? TextDecoration.lineThrough : null,
+                      decorationColor: Colors.grey[500],
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    '${alarm.repeatDaysText} | $nextTimeString',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ),
-              ],
-            ),
-            trailing: Switch(
-              value: alarm.isActive,
-              onChanged: (bool value) { _toggleAlarm(alarm, value); },
-              activeColor: Theme.of(context).colorScheme.primary,
-            ),
-            onTap: () => _showAddEditAlarmDialog(existingAlarm: alarm),
-            onLongPress: () async {
-              bool? confirmDelete = await showDialog<bool>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Alarmı Sil?'),
-                    content: Text(
-                        'Bu alarmı (${DateFormat('HH:mm').format(alarm.dateTime)}${alarm.label != null && alarm.label!.isNotEmpty ? ' - ${alarm.label}' : ''}) kalıcı olarak silmek istediğinizden emin misiniz?'), // DateTime kullanılıyor
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('İPTAL'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('SİL', style: TextStyle(color: Colors.red)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (alarm.label != null && alarm.label!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            alarm.label!,
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: alarm.isActive ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          '${alarm.repeatDaysText} | $nextTimeString',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       ),
                     ],
-                  );
-                },
-              );
-              if (confirmDelete == true) {
-                _deleteAlarm(alarm, index);
-              }
-            },
-          );
-        },
+                  ),
+                  trailing: Switch(
+                    value: alarm.isActive,
+                    onChanged: (bool value) {
+                      _toggleAlarm(alarm, value);
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  onTap: () => _showAddEditAlarmDialog(existingAlarm: alarm),
+                  onLongPress: () async {
+                    bool? confirmDelete = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Alarmı Sil?'),
+                          content: Text(
+                              'Bu alarmı (${DateFormat('HH:mm').format(alarm.dateTime)}${alarm.label != null && alarm.label!.isNotEmpty ? ' - ${alarm.label}' : ''}) kalıcı olarak silmek istediğinizden emin misiniz?'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('İPTAL'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('SİL', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    if (confirmDelete == true) {
+                      _deleteAlarm(alarm, index);
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
