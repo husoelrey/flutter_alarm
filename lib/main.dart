@@ -77,7 +77,7 @@ const MethodChannel _nativeChannel = MethodChannel('com.example.alarm/native');
 
 
 
-// Tetikleme tamamen native tarafta (AlarmTriggerReceiver) gerçekleşiyor. çünkü flutterla erişim çok zor
+/// Tetikleme tamamen native tarafta AlarmTriggerReceiver.ktde gerçekleşiyor. çünkü flutterla erişim çok zor
 /// Bildirim kanalını yapılandırma fonksiyonu
 Future<void> _configureNotificationChannel() async {
   if (!Platform.isAndroid) return;
