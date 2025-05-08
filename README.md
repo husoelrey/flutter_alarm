@@ -1,5 +1,5 @@
 # ⏰ Flutter Alarm Uygulaması
-Kullanıcıyı tek seferde ve bilinçli şekilde uyandırmak için tasarlanmış, modern bir **alarm uygulaması**. Erteleme tuşu içermeyen yapısı ve interaktif uyanma görevleriyle klasik alarm uygulamalarından ayrılır. Uygulamanın amacı sadece uyandırmak değil — aynı zamanda güne zihinsel olarak hazır başlamanı sağlamak.
+Kullanıcıyı tek seferde uyandırmak için tasarlanmış, modern bir **alarm uygulaması**. **Erteleme tuşu içermeyen** yapısı ve uyanma görevleriyle klasik alarm uygulamalarından ayrılır. Uygulamanın amacı sadece uyandırmak değil; aynı zamanda güne zihinsel olarak hazır başlamanı sağlamak.
 
 ## 🚀 Özellikler
 
@@ -7,7 +7,7 @@ Kullanıcıyı tek seferde ve bilinçli şekilde uyandırmak için tasarlanmış
 - 📱 **Flutter ↔ Native Entegrasyonu:** Android sistem alarmı doğrudan native (Kotlin) kod ile tetiklenir.
 - 🧠 **Uyanma Görevleri:** Alarmı kapatmak için kullanıcıyı zihinsel olarak aktif hâle getiren mini görevler:
     - Hafıza oyunu (kareleri ezberle ve bul)
-    - Yazı kopyalama (motivasyon cümleleri)
+    - Yazıları tekrar yaz (motivasyon cümlelerini eksiksiz yaz)
 - 🗝️ **Tam Ekran Alarm:** Alarm çaldığında ekran uyanır ve doğrudan RingActivity (Kotlin) açılır.
 - 🔐 **Firebase Authentication:** Kullanıcılar e‑posta ve şifre ile giriş yapabilir.
 - 💭 **Motivasyon Sayfası:** Uygulama içinde düzenlenebilir motivasyon cümleleri saklanır.
@@ -60,14 +60,15 @@ Kullanıcıyı tek seferde ve bilinçli şekilde uyandırmak için tasarlanmış
 
 ## 📁 Dizin Yapısı (Özet)
 lib/
-├── main.dart # Uygulama başlatıcısı, native handler’lar
-├── motivation_page.dart # Motivasyon listesi
+├── main.dart                 # Uygulama başlatıcısı, native handler’lar
+├── motivation_page.dart     # Motivasyon listesi
 ├── motivation_typing_page.dart # Yazı yazma görevi
-├── grid_memory_game_page.dart # Hafıza oyunu
-├── good_morning.dart # Uyanış sonrası ekran
-├── login_page.dart # Giriş ekranı
-├── awareness_page.dart # Uyku farkındalığı sayfası
-└── permission_screen.dart # Android izinleri
+├── grid_memory_game_page.dart  # Hafıza oyunu
+├── good_morning.dart        # Uyanış sonrası ekran
+├── login_page.dart          # Giriş ekranı
+├── awareness_page.dart      # Uyku farkındalığı sayfası
+└── permission_screen.dart   # Android izinleri
+
 
 
 ## 🧪 Test Notları
@@ -90,7 +91,7 @@ Dilediğiniz gibi kullanabilir ve geliştirebilirsiniz.
 ---
 
 ## Hazırlayan: [Hüseyin Erekmen]
-https://github.com/husoelrey
-https://www.linkedin.com/in/huseyinerekmen/
+- https://github.com/husoelrey
+- https://www.linkedin.com/in/huseyinerekmen/
 
 
