@@ -59,15 +59,15 @@ Kullanıcıyı tek seferde uyandırmak için tasarlanmış, modern bir **alarm u
 4. Android telefon bağlayarak `flutter run`.
 
 ## 📁 Dizin Yapısı (Özet)
-lib/
-├── main.dart                 # Uygulama başlatıcısı, native handler’lar
-├── motivation_page.dart     # Motivasyon listesi
-├── motivation_typing_page.dart # Yazı yazma görevi
-├── grid_memory_game_page.dart  # Hafıza oyunu
-├── good_morning.dart        # Uyanış sonrası ekran
-├── login_page.dart          # Giriş ekranı
-├── awareness_page.dart      # Uyku farkındalığı sayfası
-└── permission_screen.dart   # Android izinleri
+- lib/
+- ├── main.dart                   # Uygulama başlatıcısı, native handler’lar
+- ├── motivation_page.dart        # Motivasyon listesi
+- ├── motivation_typing_page.dart # Yazı yazma görevi
+- ├── grid_memory_game_page.dart  # Hafıza oyunu
+- ├── good_morning.dart           # Uyanış sonrası ekran
+- ├── login_page.dart             # Giriş ekranı
+- ├── awareness_page.dart         # Uyku farkındalığı sayfası
+- └── permission_screen.dart      # Android izinleri
 
 
 
