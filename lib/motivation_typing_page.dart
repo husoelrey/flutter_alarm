@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import 'good_morning.dart';
 import 'main.dart'; // 🔔 nativeAlarmId global değişkeni burada tanımlı olmalı
@@ -18,10 +19,11 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
   static const _native = MethodChannel('com.example.alarm/native');
 
   String _target = '';
-  String _input  = '';
+  String _input = '';
   late Timer _timer;
-  int   _remaining = 60;
+  int _remaining = 60;
   final _controller = TextEditingController();
+  AudioPlayer? _player;
 
   @override
   void initState() {
@@ -34,6 +36,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
   @override
   void dispose() {
     _timer.cancel();
+    _stopAlarmSound();
     if (_input != _target) _restartAlarm();
     _controller.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -53,6 +56,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_remaining == 0) {
         _timer.cancel();
+        _stopAlarmSound();
         _restartAlarm();
       } else {
         setState(() => _remaining--);
@@ -80,15 +84,14 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
     setState(() => _input = v);
     if (_input == _target) {
       _timer.cancel();
+      _stopAlarmSound();
       final int? id = widget.alarmId ?? nativeAlarmId;
       if (id != null && id != -1) {
         _native.invokeMethod('cancelNativeAlarm', {'id': id});
       }
 
-      // önce bu sayfayı kapatıyoruz
       Navigator.of(context).pop();
 
-      // ardından GoodMorningPage sayfasını açıyoruz
       Future.microtask(() {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const GoodMorningPage()),
@@ -97,6 +100,25 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
     }
   }
 
+  Future<void> _playSavedAlarmSound() async {
+    final prefs = await SharedPreferences.getInstance();
+    final soundPath = prefs.getString('selected_alarm_sound');
+
+    if (soundPath != null && soundPath.isNotEmpty) {
+      _player = AudioPlayer();
+      await _player!.play(DeviceFileSource(soundPath), volume: 1.0);
+    } else {
+      debugPrint("Alarm sesi bulunamadı");
+    }
+  }
+
+  Future<void> _stopAlarmSound() async {
+    if (_player != null) {
+      await _player!.stop();
+      await _player!.dispose();
+      _player = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) => WillPopScope(
@@ -128,7 +150,6 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
                 ),
               ),
               const SizedBox(height: 32),
-
               Center(
                 child: RichText(
                   text: TextSpan(
@@ -152,7 +173,6 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 32),
               TextField(
                 controller: _controller,
@@ -171,9 +191,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
                 ),
                 onChanged: _onChanged,
               ),
-
               const Spacer(),
-
               Center(
                 child: Stack(
                   alignment: Alignment.center,

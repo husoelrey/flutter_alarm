@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 class RingService : Service() {
 
     private var mediaPlayer: MediaPlayer? = null
+    private var currentAlarmId: Int = -1 // 💡 intent yerine buradan erişeceğiz
 
     private val NOTIFICATION_ID = 123
     private val CHANNEL_ID = "alarm_ring_service_channel"
@@ -33,19 +34,18 @@ class RingService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        val action  = intent?.action
-        val alarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
-        Log.d(TAG, "onStartCommand → action=$action  id=$alarmId")
+        val action = intent?.action
+        currentAlarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
+        Log.d(TAG, "onStartCommand → action=$action  id=$currentAlarmId")
 
-        if (alarmId == -1 && action == ACTION_START) {
+        if (currentAlarmId == -1 && action == ACTION_START) {
             Log.e(TAG, "Geçersiz ALARM_ID, servis başlatılamıyor")
             stopSelf()
             return START_NOT_STICKY
         }
 
-        /* ───── FULL‑SCREEN INTENT •––––––––––––––––––––– */
         val fullScreenIntent = Intent(this, AlarmRingActivity::class.java).apply {
-            putExtra("id", alarmId)
+            putExtra("id", currentAlarmId)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 
@@ -53,25 +53,19 @@ class RingService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         else PendingIntent.FLAG_UPDATE_CURRENT
 
-        val fullScreenPI = PendingIntent.getActivity(
-            this, alarmId, fullScreenIntent, piFlags
-        )
+        val fullScreenPI = PendingIntent.getActivity(this, currentAlarmId, fullScreenIntent, piFlags)
 
-        /* Bildirime tıklandığında da aynı sayfa açılsın */
-        val tapPI = PendingIntent.getActivity(
-            this, alarmId + 1000, fullScreenIntent, piFlags
-        )
+        val tapPI = PendingIntent.getActivity(this, currentAlarmId + 1000, fullScreenIntent, piFlags)
 
-        /* ───── Bildirim •––––––––––––––––––––────────── */
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)          // isteğe göre değiştir
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Alarm Çalıyor!")
-            .setContentText("Alarm ID: $alarmId çalıyor")
-            .setPriority(NotificationCompat.PRIORITY_MAX) // heads‑up
+            .setContentText("Alarm ID: $currentAlarmId çalıyor")
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setFullScreenIntent(fullScreenPI, true)      // 💥 kritik
+            .setFullScreenIntent(fullScreenPI, true)
             .setContentIntent(tapPI)
             .build()
 
@@ -84,13 +78,9 @@ class RingService : Service() {
             return START_NOT_STICKY
         }
 
-        /* ───── Aksiyonlar •––––––––––––––––––––──────── */
         when (action) {
-
             ACTION_START -> {
                 startSound()
-                /* Bazı cihazlarda sistem tam‑ekranı otomatik açmıyor →
-                   emin olmak için kendimiz de başlatıyoruz.              */
                 try {
                     startActivity(fullScreenIntent)
                     Log.d(TAG, "AlarmRingActivity manuel olarak başlatıldı")
@@ -98,15 +88,12 @@ class RingService : Service() {
                     Log.e(TAG, "startActivity hatası", e)
                 }
             }
-
             ACTION_STOP -> {
                 stopSoundAndService()
                 return START_NOT_STICKY
             }
-
             else -> {
                 Log.w(TAG, "Bilinmeyen aksiyon: $action")
-                /* Player zaten çalıyorsa servis yaşamaya devam etsin */
                 if (mediaPlayer?.isPlaying != true) stopSelf()
             }
         }
@@ -114,35 +101,46 @@ class RingService : Service() {
         return START_STICKY
     }
 
-    /* ───── Yardımcı fonksiyonlar (SES) •––––––––––––––––––––──────── */
-
     private fun startSound() {
         Log.d(TAG, "startSound()")
-        stopSoundOnly()  // varsa eskiyi kapat
+        stopSoundOnly()
 
-        val soundUri = Uri.parse("android.resource://$packageName/${R.raw.un}")
-        Log.d(TAG, "soundUri = $soundUri")
+        val prefs = getSharedPreferences("alarm_prefs", MODE_PRIVATE)
+        val customPath = prefs.getString("soundPath_$currentAlarmId", null)
 
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build()
-            )
-            setOnErrorListener { _, w, e ->
-                Log.e(TAG, "MediaPlayer error what=$w extra=$e"); stopSoundAndService(); true
-            }
-            try {
-                setDataSource(this@RingService, soundUri)
+        Log.d(TAG, "Selected soundPath for ID $currentAlarmId: $customPath")
+
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .build()
+                )
+                setOnErrorListener { _, w, e ->
+                    Log.e(TAG, "MediaPlayer error what=$w extra=$e")
+                    stopSoundAndService()
+                    true
+                }
+
+                if (!customPath.isNullOrEmpty()) {
+                    setDataSource(customPath)
+                    Log.d(TAG, "Custom alarm sound selected.")
+                } else {
+                    val fallback = Uri.parse("android.resource://$packageName/${R.raw.un}")
+                    setDataSource(this@RingService, fallback)
+                    Log.d(TAG, "Default alarm sound used (un.mp3).")
+                }
+
                 isLooping = true
                 prepare()
                 start()
                 Log.d(TAG, "MediaPlayer started")
-            } catch (e: Exception) {
-                Log.e(TAG, "MediaPlayer hata", e)
-                stopSelf()
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "MediaPlayer hata", e)
+            stopSelf()
         }
     }
 
@@ -152,7 +150,9 @@ class RingService : Service() {
             mediaPlayer?.release()
         } catch (e: Exception) {
             Log.e(TAG, "MediaPlayer stop/release hata", e)
-        } finally { mediaPlayer = null }
+        } finally {
+            mediaPlayer = null
+        }
     }
 
     private fun stopSoundAndService() {
@@ -163,16 +163,18 @@ class RingService : Service() {
         stopSelf()
     }
 
-    /* ───── Service & kanal boilerplate •––––––––––––––––––––──────── */
+    override fun onDestroy() {
+        stopSoundOnly()
+        super.onDestroy()
+    }
 
-    override fun onDestroy() { stopSoundOnly(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "Alarm Servisi",
-                NotificationManager.IMPORTANCE_HIGH    // heads‑up & full‑screen
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Alarm çalarken kullanılan kanal"
                 setSound(null, null)

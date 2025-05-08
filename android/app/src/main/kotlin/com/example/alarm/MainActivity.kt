@@ -59,10 +59,16 @@ class MainActivity : FlutterActivity() {
                         val id = call.argument<Int>("id") ?: -1
                         val timeInMillis = call.argument<Long>("timeInMillis") ?: -1L
                         val isRepeating = call.argument<Boolean>("isRepeating") ?: false
+                        val soundPath = call.argument<String>("soundPath") ?: ""
+
                         if (id == -1 || timeInMillis == -1L) {
                             result.error("INVALID_ARGS", "Bad ID/time", null)
                             return@setMethodCallHandler
                         }
+
+                        // 🔊 Kullanıcının seçtiği ses yolunu kaydet
+                        saveSoundPathForAlarm(id, soundPath)
+
                         scheduleAlarm(id, timeInMillis, isRepeating)
                         result.success(true)
                     }
@@ -94,8 +100,7 @@ class MainActivity : FlutterActivity() {
                 MethodChannel(messenger, NATIVE_CHANNEL)
                     .invokeMethod("openTypingPage", mapOf("alarmId" to alarmId))
             }
-        }
-        else if (route == "/memory" && alarmId != -1) {
+        } else if (route == "/memory" && alarmId != -1) {
             Log.d(TAG, "openMemoryPage → ID=$alarmId")
             flutterEngineRef?.dartExecutor?.binaryMessenger?.let { messenger ->
                 MethodChannel(messenger, NATIVE_CHANNEL)
@@ -103,7 +108,6 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
-
 
     private fun scheduleAlarm(id: Int, timeInMillis: Long, repeating: Boolean) {
         val mgr = getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -140,5 +144,11 @@ class MainActivity : FlutterActivity() {
         else PendingIntent.FLAG_UPDATE_CURRENT
         mgr.cancel(PendingIntent.getBroadcast(this, id, intent, flags))
         Log.d(TAG, "Alarm cancelled → ID=$id")
+    }
+
+    private fun saveSoundPathForAlarm(alarmId: Int, path: String) {
+        val prefs = getSharedPreferences("alarm_prefs", MODE_PRIVATE)
+        prefs.edit().putString("soundPath_$alarmId", path).apply()
+        Log.d(TAG, "Sound path saved → ID=$alarmId, path=$path")
     }
 }
