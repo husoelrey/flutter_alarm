@@ -16,6 +16,7 @@ import 'package:collection/collection.dart';
 import 'package:alarm/grid_memory_game_page.dart';
 import 'auth_page.dart';
 import 'good_morning.dart';
+import 'awareness_page.dart';
 import 'motivation_page.dart';
 import 'alarm_model.dart';
 import 'alarm_storage.dart';
@@ -110,6 +111,7 @@ class _MainShellState extends State<MainShell> {
   final List<Widget> _pages = [
     const AlarmHomePage(),
     MotivationPage(),
+    AwarenessPage(),
   ];
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
@@ -126,10 +128,8 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.access_alarm),
             label: 'Alarmlar',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.format_quote),
-            label: 'Motivasyonlar',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.format_quote), label: 'Motivasyonlar',),
+          BottomNavigationBarItem(icon: Icon(Icons.psychology), label: 'Farkındalık'),
         ],
       ),
     );
