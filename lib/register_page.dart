@@ -52,7 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               const SizedBox(height: 60),
               const Text(
-                '📝 Kayıt Ol',
+                '📝 Kayıt Ol 📝',
                 style: TextStyle(
                   color: Colors.tealAccent,
                   fontSize: 28,

@@ -127,7 +127,7 @@ class _PermissionScreenState extends State<PermissionScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton.icon(
                 icon: const Icon(Icons.check_circle_outline_rounded),
-                label: const Text('Gerekli İzinleri İste'),
+                label: const Text('Kontrol et'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -139,7 +139,7 @@ class _PermissionScreenState extends State<PermissionScreen> {
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () async => await openAppSettings(),
-                child: const Text('⚙️ İzinleri Manuel Ayarla'),
+                child: const Text('⚙️ Teknik bilgim var, izinleri kendim ayarlayacağım'),
               ),
               const SizedBox(height: 16),
             ],
