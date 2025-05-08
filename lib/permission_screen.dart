@@ -60,12 +60,12 @@ class _PermissionScreenState extends State<PermissionScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.warning_amber_rounded, size: 40, color: Colors.orange),
-        title: const Text('🚫 İzinler Eksik veya Ayar Gerekli'),
+        title: const Text('İzinler Eksik veya Ayar Gerekli'),
         content: const SingleChildScrollView(
           child: Text(
             '🔔 Alarmların güvenilir çalışabilmesi için gerekli izinler verilmelidir.\n\n'
                 '⚡️ Özellikle "Pil Optimizasyonu" ve "Üzerinde Gösterme" izinleri için ayarlara girmeniz gerekebilir.\n\n'
-                '📲 Uygulama ayarlarını açarak eksik izinleri tamamlayabilirsiniz.',
+                '⚡️ Uygulama ayarlarını açarak eksik izinleri tamamlayabilirsiniz.',
             style: TextStyle(height: 1.4),
           ),
         ),
@@ -106,21 +106,21 @@ class _PermissionScreenState extends State<PermissionScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                '🔔 Güvenilir Alarm Deneyimi İçin',
+                ' Uygulamanın Düzgün Çalışması İçin',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               const Text(
                 'Uygulamanın düzgün çalışabilmesi için aşağıdaki izinlere ihtiyaç var:',
-                style: TextStyle(fontSize: 15, color: Colors.black54),
+                style: TextStyle(fontSize: 15, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               _buildPermissionItem('🔔', 'Bildirimler', 'Alarm hakkında bilgi vermek için.'),
               _buildPermissionItem('⏰', 'Kesin Zamanlı Alarm', '(Android 12+) Zamanında çalabilmesi için.'),
-              _buildPermissionItem('🧱', 'Üzerinde Gösterme', 'Kilit ekranında alarm arayüzü göstermek için.'),
-              _buildPermissionItem('⚡️', 'Pil Optimizasyonunu Yoksay', 'Gecikmesiz çalışması için.'),
+              _buildPermissionItem('🧱', 'Üzerinde Gösterme!!!', 'Kilit ekranında alarm arayüzü göstermek için.'),
+              _buildPermissionItem('⚡️', 'Pil Optimizasyonunu Yoksay!!!', 'Gecikmesiz çalışması için.'),
 
               const Spacer(),
 

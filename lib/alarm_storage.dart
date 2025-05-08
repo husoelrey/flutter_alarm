@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart'; // debugPrint için
 import 'package:shared_preferences/shared_preferences.dart';
 import 'alarm_model.dart';
 
-/// 🔑 Native tarafla uyumlu olması için bu key değiştirildi!
+/// Native tarafla uyumlu olması için bu key değiştirildi! ÇOK ÖNEMLİ BURASI
 const String _alarmsKey = 'flutter.alarms_list';
 
 class AlarmStorage {
-  // Alarmları Kaydetme
+  // Alarmları Kaydet
   static Future<void> saveAlarms(List<AlarmInfo> alarms) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> alarmsJsonList = alarms.map((alarm) => jsonEncode(alarm.toJson())).toList();
@@ -16,7 +16,7 @@ class AlarmStorage {
     debugPrint("Alarmlar kaydedildi: ${alarmsJsonList.length} adet");
   }
 
-  // Alarmları Yükleme
+  // Alarmları Yükle
   static Future<List<AlarmInfo>> loadAlarms() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final List<String>? alarmsJsonList = prefs.getStringList(_alarmsKey);

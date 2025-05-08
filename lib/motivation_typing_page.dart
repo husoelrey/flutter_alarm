@@ -67,7 +67,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
   void _restartAlarm() async {
     final int? id = widget.alarmId ?? nativeAlarmId;
     if (id == null || id == -1) {
-      debugPrint("❌ alarmId null veya -1 olduğu için restart yapılamadı.");
+      debugPrint("alarmId null veya -1 olduğu için restart yapılamadı.");
       return;
     }
 
@@ -76,7 +76,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
       await _native.invokeMethod('restartAlarmFromFlutter', {'alarmId': id});
       debugPrint("✅ restartAlarmFromFlutter invokeMethod başarıyla gönderildi.");
     } catch (e) {
-      debugPrint("❌ restartAlarmFromFlutter invokeMethod başarısız: $e");
+      debugPrint(" restartAlarmFromFlutter invokeMethod başarısız: $e");
     }
   }
 

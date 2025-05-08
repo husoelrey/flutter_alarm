@@ -15,7 +15,7 @@ class GoodMorningPage extends StatelessWidget {
             children: [
               const SizedBox(height: 32),
               const Text(
-                '🌞 Günaydın!',
+                '🌞 Günaydınn!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 36,
@@ -25,7 +25,7 @@ class GoodMorningPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               const Text(
-                'Yeni bir güne harika bir başlangıç yapıyorsun. Hedeflerine ulaşmak için mükemmel bir gün!',
+                'Umarım senin için harika bir gün olur',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
@@ -45,7 +45,7 @@ class GoodMorningPage extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: const Text('Devam Et', style: TextStyle(fontSize: 18)),
+                child: const Text('Kapat', style: TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 24),
             ],

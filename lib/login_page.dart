@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 60),
               const Text(
-                '🔐 Giriş Yap',
+                '🔐 Giriş Yap 🔐',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.tealAccent,
