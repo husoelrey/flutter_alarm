@@ -1,48 +1,40 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:alarm/presentation/screens/main_shell.dart';
+import 'package:alarm/auth/auth_page.dart';
 
-/// A splash screen that checks the user's authentication state and navigates accordingly.
-class SplashPage extends StatefulWidget {
+/// Acts as a gatekeeper for the app's authentication state.
+///
+/// This widget listens to Firebase's `authStateChanges` stream and decides
+/// whether to show the main application (`MainShell`) or the `AuthPage` based
+/// on whether a user is currently signed in.
+class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
-}
-
-class _SplashPageState extends State<SplashPage> {
-  @override
-  void initState() {
-    super.initState();
-    _checkAuthenticationState();
-  }
-
-  /// Waits for a moment, then checks if a user is signed in and navigates.
-  Future<void> _checkAuthenticationState() async {
-    // A short delay for the splash effect
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Listen for the first authentication state change to determine if a user is logged in.
-    final user = await FirebaseAuth.instance.authStateChanges().first;
-
-    if (!mounted) return;
-
-    // Navigate to the appropriate screen
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, '/'); // User is signed in
-    } else {
-      Navigator.pushReplacementNamed(context, '/auth'); // User is not signed in
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: const Center(
-        child: CircularProgressIndicator(),
-      ),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // While waiting for the initial authentication state, show a loading screen.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // If the snapshot has data, it means a user is logged in.
+        if (snapshot.hasData) {
+          // User is signed in, show the main part of the app.
+          return const MainShell();
+        }
+        
+        // If the snapshot has no data, no user is signed in.
+        // Show the authentication page.
+        return const AuthPage();
+      },
     );
   }
 }

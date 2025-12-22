@@ -13,22 +13,18 @@ class _AuthPageState extends State<AuthPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Toggles between login and registration forms
   bool _isLogin = true;
   bool _isLoading = false;
-  String? _errorMessage;
 
   /// Submits the form to either sign in or create a new user.
+  /// On success, the StreamBuilder managing the auth state will handle navigation.
+  /// On failure, a SnackBar is shown.
   Future<void> _submit() async {
-    // Unfocus text fields to hide keyboard
+    // Hide keyboard and prevent multiple submissions
     FocusScope.of(context).unfocus();
-
     if (_isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final email = _emailController.text.trim();
@@ -41,9 +37,19 @@ class _AuthPageState extends State<AuthPage> {
         await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email, password: password);
       }
-      // If successful, the StreamBuilder in the splash/auth flow will handle navigation.
+      // Navigation is now handled automatically by the StreamBuilder in SplashPage.
+
     } on FirebaseAuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      // Show a prominent error message to the user.
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? "An unknown authentication error occurred."),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -95,16 +101,7 @@ class _AuthPageState extends State<AuthPage> {
                     textInputAction: TextInputAction.done,
                     onEditingComplete: _submit,
                   ),
-                  const SizedBox(height: 24),
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Text(
-                        _errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-                      ),
-                    ),
+                  const SizedBox(height: 32),
                   if (_isLoading)
                     const Center(child: CircularProgressIndicator())
                   else
@@ -118,7 +115,10 @@ class _AuthPageState extends State<AuthPage> {
                       child: Text(_isLogin ? 'Sign In' : 'Register'),
                     ),
                   TextButton(
-                    onPressed: () => setState(() => _isLogin = !_isLogin),
+                    onPressed: () {
+                      if (_isLoading) return; // Prevent switching state while loading
+                      setState(() => _isLogin = !_isLogin);
+                    },
                     child: Text(
                       _isLogin
                           ? 'Don\'t have an account? Register'
