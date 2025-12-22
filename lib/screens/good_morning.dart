@@ -1,3 +1,4 @@
+import 'package:alarm/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class GoodMorningPage extends StatelessWidget {
@@ -6,7 +7,7 @@ class GoodMorningPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1527),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -20,7 +21,7 @@ class GoodMorningPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
-                  color: Colors.tealAccent,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -29,13 +30,13 @@ class GoodMorningPage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.white70,
+                  color: AppColors.textSecondary,
                 ),
               ),
               const Spacer(),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.tealAccent,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(

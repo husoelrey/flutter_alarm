@@ -1,3 +1,4 @@
+import 'package:alarm/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AwarenessPage extends StatelessWidget {
@@ -140,7 +141,7 @@ Henüz uygulamamız bu kadar gelişmiş özelliklere sahip değil:)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1527),
+      backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text("🧠 Uyku Farkındalıkları")),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -150,22 +151,22 @@ Henüz uygulamamız bu kadar gelişmiş özelliklere sahip değil:)
           return GestureDetector(
             onTap: () => _showDetail(context, tip),
             child: Card(
-              color: const Color(0xFF121E33),
+              color: AppColors.surface,
               margin: const EdgeInsets.symmetric(vertical: 8),
               elevation: 3,
               child: ListTile(
                 title: Text(tip["title"]!,
                     style: const TextStyle(
-                        color: Colors.tealAccent,
+                        color: AppColors.primary,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(tip["summary"]!,
-                      style: const TextStyle(color: Colors.white70)),
+                      style: const TextStyle(color: AppColors.textSecondary)),
                 ),
                 trailing: const Icon(Icons.keyboard_arrow_right,
-                    color: Colors.white54),
+                    color: AppColors.textDisabled),
               ),
             ),
           );
@@ -177,7 +178,7 @@ Henüz uygulamamız bu kadar gelişmiş özelliklere sahip değil:)
   void _showDetail(BuildContext ctx, Map<String, String> tip) {
     showModalBottomSheet(
       context: ctx,
-      backgroundColor: const Color(0xFF0B1527),
+      backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -206,12 +207,12 @@ Henüz uygulamamız bu kadar gelişmiş özelliklere sahip değil:)
               Text(tip["title"]!,
                   style: const TextStyle(
                       fontSize: 22,
-                      color: Colors.tealAccent,
+                      color: AppColors.primary,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Text(tip["detail"]!,
                   style:
-                  const TextStyle(fontSize: 16, color: Colors.white70)),
+                  const TextStyle(fontSize: 16, color: AppColors.textSecondary)),
             ],
           ),
         ),

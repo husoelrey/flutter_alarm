@@ -44,10 +44,28 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Signing secrets and keys
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+android/key.properties
+android/local.properties
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/Release.xcconfig
+ios/Flutter/Debug.xcconfig
 
 # Extra: mobile build outputs
 *.apk
+*.aab
 *.ipa
+
+# Environment variables
+.env*
 
 # OS-specific clutter
 Thumbs.db

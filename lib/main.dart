@@ -10,6 +10,7 @@ import 'package:alarm/screens/permission_screen.dart';
 import 'package:alarm/screens/splash_page.dart';
 import 'package:alarm/services/native_channel_service.dart';
 import 'package:alarm/services/notification_service.dart';
+import 'package:alarm/theme/app_colors.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -52,18 +53,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0B1527),
+        scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.tealAccent,
+          seedColor: AppColors.primary,
           brightness: Brightness.dark,
-          primary: Colors.tealAccent,
-          secondary: Colors.tealAccent,
-          background: const Color(0xFF0B1527),
-          surface: const Color(0xFF121E33),
+          primary: AppColors.primary,
+          secondary: AppColors.primary,
+          background: AppColors.background,
+          surface: AppColors.surface,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF121E33),
-          foregroundColor: Colors.tealAccent,
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.primary,
           elevation: 0,
         ),
         useMaterial3: true,

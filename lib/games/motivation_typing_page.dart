@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:alarm/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -128,7 +129,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF221B36), Color(0xFF0D0B14)],
+              colors: AppColors.gameGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -147,7 +148,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -163,13 +164,13 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
                       TextField(
                         controller: _textController,
                         autofocus: true,
-                        cursorColor: Colors.tealAccent,
-                        style: const TextStyle(color: Colors.white, fontSize: 20),
+                        cursorColor: AppColors.primary,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 20),
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white12,
                           hintText: 'Type here...',
-                          hintStyle: const TextStyle(color: Colors.white38),
+                          hintStyle: const TextStyle(color: AppColors.textDisabled),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -196,11 +197,11 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
 
       Color color;
       if (isCorrect) {
-        color = Colors.tealAccent;
+        color = AppColors.primary;
       } else if (isTyped) {
-        color = Colors.redAccent;
+        color = AppColors.error;
       } else {
-        color = Colors.white54;
+        color = AppColors.textDisabled;
       }
 
       return TextSpan(
@@ -228,7 +229,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
               value: _secondsRemaining / _totalDurationSeconds,
               strokeWidth: 6,
               backgroundColor: Colors.white24,
-              valueColor: const AlwaysStoppedAnimation(Colors.tealAccent),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
           Text(
@@ -236,7 +237,7 @@ class _MotivationTypingPageState extends State<MotivationTypingPage> {
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.tealAccent,
+              color: AppColors.primary,
             ),
           ),
         ],

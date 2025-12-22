@@ -1,12 +1,8 @@
 package com.example.alarm
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
@@ -17,7 +13,8 @@ class MainActivity : FlutterActivity() {
 
     private var flutterEngineRef: FlutterEngine? = null
 
-    private val NATIVE_CHANNEL = "com.example.alarm/native"
+    // Use constants from our new Constants object
+    private val NATIVE_CHANNEL = Constants.CHANNEL_ID
     private val TAG = "MainActivity"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
@@ -34,23 +31,25 @@ class MainActivity : FlutterActivity() {
                             result.error("INVALID_ID", "Alarm ID is missing", null)
                             return@setMethodCallHandler
                         }
-                        Log.d(TAG, "restartAlarmFromFlutter → ID=$id")
+                        Log.d(TAG, "restartAlarmFromFlutter -> ID=$id")
 
                         // 1. Start the audio service
-                        Intent(applicationContext, RingService::class.java).apply {
-                            action = RingService.ACTION_START
-                            putExtra(RingService.EXTRA_ALARM_ID, id)
-                        }.also { startService(it) }
+                        val serviceIntent = Intent(applicationContext, RingService::class.java).apply {
+                            action = Constants.ACTION_START_RING
+                            putExtra(Constants.EXTRA_ALARM_ID, id)
+                        }
+                        startService(serviceIntent)
 
                         // 2. Re-open the alarm screen
-                        Intent(applicationContext, AlarmRingActivity::class.java).apply {
+                        val activityIntent = Intent(applicationContext, AlarmRingActivity::class.java).apply {
                             putExtra("id", id)
                             addFlags(
                                 Intent.FLAG_ACTIVITY_NEW_TASK or
                                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                                         Intent.FLAG_ACTIVITY_SINGLE_TOP
                             )
-                        }.also { startActivity(it) }
+                        }
+                        startActivity(activityIntent)
 
                         result.success(null)
                     }
@@ -66,10 +65,12 @@ class MainActivity : FlutterActivity() {
                             return@setMethodCallHandler
                         }
 
-                        // Save the sound path selected by the user
+                        // Save sound path (helper function at bottom)
                         saveSoundPathForAlarm(id, soundPath)
 
-                        scheduleAlarm(id, timeInMillis, isRepeating)
+                        // DELEGATE TO ALARM SCHEDULER
+                        AlarmScheduler.scheduleAlarm(this, id, timeInMillis, isRepeating)
+                        
                         result.success(true)
                     }
 
@@ -79,7 +80,10 @@ class MainActivity : FlutterActivity() {
                             result.error("INVALID_ID", "Bad ID", null)
                             return@setMethodCallHandler
                         }
-                        cancelAlarm(id)
+                        
+                        // DELEGATE TO ALARM SCHEDULER
+                        AlarmScheduler.cancelAlarm(this, id)
+                        
                         result.success(true)
                     }
 
@@ -94,61 +98,32 @@ class MainActivity : FlutterActivity() {
         val route = intent?.getStringExtra("route")
         val alarmId = intent?.getIntExtra("alarmId", -1) ?: -1
 
-        if (route == "/typing" && alarmId != -1) {
-            Log.d(TAG, "openTypingPage → ID=$alarmId")
-            flutterEngineRef?.dartExecutor?.binaryMessenger?.let { messenger ->
-                MethodChannel(messenger, NATIVE_CHANNEL)
-                    .invokeMethod("openTypingPage", mapOf("alarmId" to alarmId))
-            }
-        } else if (route == "/memory" && alarmId != -1) {
-            Log.d(TAG, "openMemoryPage → ID=$alarmId")
-            flutterEngineRef?.dartExecutor?.binaryMessenger?.let { messenger ->
-                MethodChannel(messenger, NATIVE_CHANNEL)
-                    .invokeMethod("openMemoryPage", mapOf("alarmId" to alarmId))
+        // Handle navigation requests from native notification actions
+        if (alarmId != -1) {
+            when (route) {
+                "/typing" -> {
+                    Log.d(TAG, "openTypingPage -> ID=$alarmId")
+                    invokeFlutterMethod("openTypingPage", alarmId)
+                }
+                "/memory" -> {
+                    Log.d(TAG, "openMemoryPage -> ID=$alarmId")
+                    invokeFlutterMethod("openMemoryPage", alarmId)
+                }
             }
         }
     }
 
-    private fun scheduleAlarm(id: Int, timeInMillis: Long, repeating: Boolean) {
-        val mgr = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, AlarmTriggerReceiver::class.java).apply {
-            putExtra("ALARM_ID", id)
-            putExtra("IS_REPEATING", repeating)
-            action = "com.example.alarm.ALARM_TRIGGER_$id"
+    // Helper to send method calls to Flutter
+    private fun invokeFlutterMethod(method: String, alarmId: Int) {
+        flutterEngineRef?.dartExecutor?.binaryMessenger?.let { messenger ->
+            MethodChannel(messenger, NATIVE_CHANNEL)
+                .invokeMethod(method, mapOf("alarmId" to alarmId))
         }
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        else PendingIntent.FLAG_UPDATE_CURRENT
-        val pI = PendingIntent.getBroadcast(this, id, intent, flags)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !mgr.canScheduleExactAlarms()) {
-            startActivity(
-                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-            Log.w(TAG, "Exact alarm permission is missing; prompted the user.")
-            return
-        }
-
-        mgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pI)
-        Log.d(TAG, "Alarm scheduled → ID=$id, epoch=$timeInMillis")
-    }
-
-    private fun cancelAlarm(id: Int) {
-        val mgr = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, AlarmTriggerReceiver::class.java).apply {
-            action = "com.example.alarm.ALARM_TRIGGER_$id"
-        }
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        else PendingIntent.FLAG_UPDATE_CURRENT
-        mgr.cancel(PendingIntent.getBroadcast(this, id, intent, flags))
-        Log.d(TAG, "Alarm cancelled → ID=$id")
     }
 
     private fun saveSoundPathForAlarm(alarmId: Int, path: String) {
-        val prefs = getSharedPreferences("alarm_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences(Constants.ALARM_PREFS, MODE_PRIVATE)
         prefs.edit().putString("soundPath_$alarmId", path).apply()
-        Log.d(TAG, "Sound path saved → ID=$alarmId, path=$path")
+        Log.d(TAG, "Sound path saved -> ID=$alarmId, path=$path")
     }
 }

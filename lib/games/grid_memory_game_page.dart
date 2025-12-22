@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+
+import 'package:alarm/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,12 +27,6 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
   static const int totalHints = 8; // Number of tiles to find
   static const Duration hintDuration = Duration(seconds: 3);
   static const int gameDurationSeconds = 35;
-
-  // --- UI Colors ---
-  static const Color bgColor = Color(0xFF0A0D2B);
-  static const Color defaultTileColor = Color(0xFF1A1E3F);
-  static const Color hintTileColor = Colors.tealAccent;
-  static const Color wrongTileColor = Color(0xFFE53935);
 
   // --- Game State ---
   int? _effectiveAlarmId;
@@ -157,7 +153,7 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
-        backgroundColor: bgColor,
+        backgroundColor: AppColors.gameGradient[1], // Use a dark tone from the gradient
         body: SafeArea(
           child: Column(
             children: [
@@ -170,7 +166,7 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
                     value: _secondsLeft / gameDurationSeconds,
                     minHeight: 6,
                     backgroundColor: Colors.white24,
-                    valueColor: const AlwaysStoppedAnimation<Color>(hintTileColor),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.tileHint),
                   ),
                 ),
               ),
@@ -192,11 +188,11 @@ class _GridMemoryGamePageState extends State<GridMemoryGamePage> {
 
                     Color tileColor;
                     if (isCorrect || isHint) {
-                      tileColor = hintTileColor;
+                      tileColor = AppColors.tileHint;
                     } else if (isWronglyTapped) {
-                      tileColor = wrongTileColor;
+                      tileColor = AppColors.tileWrong;
                     } else {
-                      tileColor = defaultTileColor;
+                      tileColor = AppColors.tileDefault;
                     }
 
                     return GestureDetector(

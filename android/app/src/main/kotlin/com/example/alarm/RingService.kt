@@ -17,14 +17,9 @@ class RingService : Service() {
     private var currentAlarmId: Int = -1 // Access from here instead of via intent
 
     private val NOTIFICATION_ID = 123
-    private val CHANNEL_ID = "alarm_ring_service_channel"
     private val TAG = "RingService"
 
-    companion object {
-        const val ACTION_START = "com.example.alarm.ACTION_START_RING_SERVICE"
-        const val ACTION_STOP  = "com.example.alarm.ACTION_STOP_RING_SERVICE"
-        const val EXTRA_ALARM_ID = "ALARM_ID"
-    }
+    // No need for companion object constants anymore, using Constants.kt
 
     override fun onCreate() {
         super.onCreate()
@@ -35,11 +30,11 @@ class RingService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val action = intent?.action
-        currentAlarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
-        Log.d(TAG, "onStartCommand → action=$action  id=$currentAlarmId")
+        currentAlarmId = intent?.getIntExtra(Constants.EXTRA_ALARM_ID, -1) ?: -1
+        Log.d(TAG, "onStartCommand -> action=$action  id=$currentAlarmId")
 
-        if (currentAlarmId == -1 && action == ACTION_START) {
-            Log.e(TAG, "Geçersiz ALARM_ID, servis başlatılamıyor")
+        if (currentAlarmId == -1 && action == Constants.ACTION_START_RING) {
+            Log.e(TAG, "Invalid ALARM_ID, service cannot start")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -57,7 +52,7 @@ class RingService : Service() {
 
         val tapPI = PendingIntent.getActivity(this, currentAlarmId + 1000, fullScreenIntent, piFlags)
 
-        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notif = NotificationCompat.Builder(this, Constants.CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Alarm Çalıyor!")
             .setContentText("Alarm ID: $currentAlarmId çalıyor")
@@ -71,29 +66,29 @@ class RingService : Service() {
 
         try {
             startForeground(NOTIFICATION_ID, notif)
-            Log.d(TAG, "Foreground + bildirim başlatıldı")
+            Log.d(TAG, "Foreground + notification started")
         } catch (e: Exception) {
-            Log.e(TAG, "startForeground hatası", e)
+            Log.e(TAG, "startForeground error", e)
             stopSelf()
             return START_NOT_STICKY
         }
 
         when (action) {
-            ACTION_START -> {
+            Constants.ACTION_START_RING -> {
                 startSound()
                 try {
                     startActivity(fullScreenIntent)
-                    Log.d(TAG, "AlarmRingActivity manuel olarak başlatıldı")
+                    Log.d(TAG, "AlarmRingActivity started manually")
                 } catch (e: Exception) {
-                    Log.e(TAG, "startActivity hatası", e)
+                    Log.e(TAG, "startActivity error", e)
                 }
             }
-            ACTION_STOP -> {
+            Constants.ACTION_STOP_RING -> {
                 stopSoundAndService()
                 return START_NOT_STICKY
             }
             else -> {
-                Log.w(TAG, "Bilinmeyen aksiyon: $action")
+                Log.w(TAG, "Unknown action: $action")
                 if (mediaPlayer?.isPlaying != true) stopSelf()
             }
         }
@@ -105,7 +100,7 @@ class RingService : Service() {
         Log.d(TAG, "startSound()")
         stopSoundOnly()
 
-        val prefs = getSharedPreferences("alarm_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences(Constants.ALARM_PREFS, MODE_PRIVATE)
         val customPath = prefs.getString("soundPath_$currentAlarmId", null)
 
         Log.d(TAG, "Selected soundPath for ID $currentAlarmId: $customPath")
@@ -139,7 +134,7 @@ class RingService : Service() {
                 Log.d(TAG, "MediaPlayer started")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "MediaPlayer hata", e)
+            Log.e(TAG, "MediaPlayer error", e)
             stopSelf()
         }
     }
@@ -149,7 +144,7 @@ class RingService : Service() {
             mediaPlayer?.takeIf { it.isPlaying }?.stop()
             mediaPlayer?.release()
         } catch (e: Exception) {
-            Log.e(TAG, "MediaPlayer stop/release hata", e)
+            Log.e(TAG, "MediaPlayer stop/release error", e)
         } finally {
             mediaPlayer = null
         }
@@ -173,10 +168,10 @@ class RingService : Service() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID, "Alarm Servisi",
+                Constants.CHANNEL_ID, "Alarm Service",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Alarm çalarken kullanılan kanal"
+                description = "Channel used while alarm is ringing"
                 setSound(null, null)
                 enableVibration(false)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC

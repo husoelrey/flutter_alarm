@@ -23,8 +23,8 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
         // The service will now trigger the UI via FullScreen Intent.
         Log.d(TAG, "Starting RingService for ID: $alarmId")
         val serviceIntent = Intent(context, RingService::class.java).apply {
-            action = RingService.ACTION_START
-            putExtra(RingService.EXTRA_ALARM_ID, alarmId) // Send Alarm ID to the service
+            action = Constants.ACTION_START_RING
+            putExtra(Constants.EXTRA_ALARM_ID, alarmId) // Send Alarm ID to the service
         }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -38,7 +38,7 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
         }
 
         // --- Logic to reschedule repeating alarm (Still under development) ---
-        val isRepeating = intent.getBooleanExtra("IS_REPEATING", false)
+        val isRepeating = intent.getBooleanExtra(Constants.EXTRA_IS_REPEATING, false)
         if (isRepeating) {
             Log.d(TAG, "Alarm ID $alarmId is repeating. Needs rescheduling (Not implemented here).")
             // NativeAlarmScheduler.rescheduleRepeatingAlarm(context, alarmId)

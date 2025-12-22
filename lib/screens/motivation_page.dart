@@ -1,3 +1,4 @@
+import 'package:alarm/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,9 +50,11 @@ class _MotivationPageState extends State<MotivationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Uyanma Motivasyonu Ekle'),
         centerTitle: true,
+        backgroundColor: AppColors.surface,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -59,33 +62,45 @@ class _MotivationPageState extends State<MotivationPage> {
           children: [
             TextField(
               controller: _controller,
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 labelText: 'Motivasyon cümlesi gir',
-                border: OutlineInputBorder(),
+                labelStyle: const TextStyle(color: AppColors.textSecondary),
+                filled: true,
+                fillColor: AppColors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
               onSubmitted: (_) => _addMotivation(),
             ),
             SizedBox(height: 12),
             ElevatedButton(
               onPressed: _addMotivation,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.black,
+              ),
               child: Text('Ekle'),
             ),
             SizedBox(height: 24),
             Expanded(
               child: _motivations.isEmpty
-                  ? Text('Henüz motivasyon eklenmedi.')
-                  : ListView.builder(
-                itemCount: _motivations.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(_motivations[index]),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () => _removeMotivation(index),
+                  ? Center(child: Text('Henüz motivasyon eklenmedi.', style: TextStyle(color: AppColors.textDisabled)))
+                  : ListView.separated(
+                      itemCount: _motivations.length,
+                      separatorBuilder: (context, index) => const Divider(color: Colors.white10),
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(_motivations[index], style: TextStyle(color: AppColors.textPrimary)),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete, color: AppColors.error),
+                            onPressed: () => _removeMotivation(index),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

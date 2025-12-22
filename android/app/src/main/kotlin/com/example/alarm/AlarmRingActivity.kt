@@ -152,8 +152,8 @@ class AlarmRingActivity : AppCompatActivity() {
     private fun stopRingService(alarmId: Int) {
         Log.d(TAG, "Sending stop intent to RingService for ID: $alarmId")
         val stopIntent = Intent(applicationContext, RingService::class.java).apply {
-            action = RingService.ACTION_STOP
-            putExtra(RingService.EXTRA_ALARM_ID, alarmId)
+            action = Constants.ACTION_STOP_RING
+            putExtra(Constants.EXTRA_ALARM_ID, alarmId)
         }
         try {
             applicationContext.startService(stopIntent)
