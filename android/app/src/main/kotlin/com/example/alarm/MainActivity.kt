@@ -36,13 +36,13 @@ class MainActivity : FlutterActivity() {
                         }
                         Log.d(TAG, "restartAlarmFromFlutter → ID=$id")
 
-                        // 1) Sesi başlat
+                        // 1. Start the audio service
                         Intent(applicationContext, RingService::class.java).apply {
                             action = RingService.ACTION_START
                             putExtra(RingService.EXTRA_ALARM_ID, id)
                         }.also { startService(it) }
 
-                        // 2) Alarm ekranını tekrar aç
+                        // 2. Re-open the alarm screen
                         Intent(applicationContext, AlarmRingActivity::class.java).apply {
                             putExtra("id", id)
                             addFlags(
@@ -66,7 +66,7 @@ class MainActivity : FlutterActivity() {
                             return@setMethodCallHandler
                         }
 
-                        // 🔊 Kullanıcının seçtiği ses yolunu kaydet
+                        // Save the sound path selected by the user
                         saveSoundPathForAlarm(id, soundPath)
 
                         scheduleAlarm(id, timeInMillis, isRepeating)
@@ -126,7 +126,7 @@ class MainActivity : FlutterActivity() {
                 Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
-            Log.w(TAG, "Exact-alarm izni yok, kullanıcıya soruldu")
+            Log.w(TAG, "Exact alarm permission is missing; prompted the user.")
             return
         }
 

@@ -14,7 +14,7 @@ import androidx.core.app.NotificationCompat
 class RingService : Service() {
 
     private var mediaPlayer: MediaPlayer? = null
-    private var currentAlarmId: Int = -1 // 💡 intent yerine buradan erişeceğiz
+    private var currentAlarmId: Int = -1 // Access from here instead of via intent
 
     private val NOTIFICATION_ID = 123
     private val CHANNEL_ID = "alarm_ring_service_channel"

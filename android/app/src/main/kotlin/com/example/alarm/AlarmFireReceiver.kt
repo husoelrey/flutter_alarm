@@ -13,25 +13,25 @@ import android.os.Build
 class AlarmFireReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Alarm ID'yi al (Flutter UI'a göndermek için)
+        // Retrieve Alarm ID (to send to Flutter UI)
         val alarmIdStr = intent.getStringExtra("id") ?: "-1"
         Log.d("AlarmFireReceiver", "Broadcast alındı, id = $alarmIdStr")
 
-        // 1. RingService'i başlat (Sesi çalmak için)
+        // 1. Start RingService (to play sound)
         val serviceIntent = Intent(context, RingService::class.java).apply {
             action = RingService.ACTION_START
         }
-        // Android O+'da foreground service başlatma yöntemi farklı
+        // Use correct method for starting foreground service on Android O+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent)
         } else {
             context.startService(serviceIntent)
         }
 
-        // 2. Tam ekran UI Activity'sini başlat (AlarmRingActivity -> Flutter)
+        // 2. Start full-screen UI Activity (AlarmRingActivity -> Flutter)
         val ringUiIntent = Intent(context, AlarmRingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            putExtra("id", alarmIdStr) // Alarm ID'yi UI'a ilet
+            putExtra("id", alarmIdStr) // Pass Alarm ID to UI
         }
         context.startActivity(ringUiIntent)
     }

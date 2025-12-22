@@ -6,7 +6,7 @@ class GoodMorningPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1527), // koyu lacivert zemin
+      backgroundColor: const Color(0xFF0B1527),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

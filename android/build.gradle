@@ -1,11 +1,11 @@
 buildscript {
     repositories {
-        google()           // ✅ EKLİ OLMALI
+        google()           // ✅ MUST BE ADDED
         mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.3.0'
-        classpath 'com.google.gms:google-services:4.4.0' // ✅ Firebase için gerekli
+        classpath 'com.google.gms:google-services:4.4.0' // ✅ Required for Firebase
     }
 }
 

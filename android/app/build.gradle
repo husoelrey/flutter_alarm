@@ -1,7 +1,7 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // Flutter pluginini sonda bırakmak iyi bir pratiktir
+    // It is good practice to leave the Flutter plugin at the end.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -13,7 +13,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-        // Java 8+ API'lerini eski Android sürümlerinde kullanmak için desugaring etkinleştir
+        // Enable desugaring to use Java 8+ APIs on older Android versions.
         coreLibraryDesugaringEnabled true
     }
 
@@ -27,45 +27,45 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // MultiDex genellikle Flutter projelerinde varsayılan olarak etkindir,
-        // ama gerekirse eklenebilir: multiDexEnabled true
+        // MultiDex is usually enabled by default in Flutter projects,
+        // but can be added if needed: multiDexEnabled true
     }
 
-    // Lint uyarılarını bastırmak için (opsiyonel)
+    // To suppress lint warnings (optional)
     tasks.withType(JavaCompile).configureEach {
         options.compilerArgs += ["-Xlint:-options", "-Xlint:-deprecation", "-Xlint:-unchecked"]
     }
 
     buildTypes {
         release {
-            // TODO: Yayınlama için uygun imzalama yapılandırmasını ayarla
+            // TODO: Set up proper signing configuration for release.
             signingConfig = signingConfigs.debug
-            // minifyEnabled true // Kod küçültme (opsiyonel)
-            // shrinkResources true // Kullanılmayan kaynakları kaldırma (opsiyonel)
-            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' // ProGuard kuralları
+            // minifyEnabled true // Code shrinking (optional)
+            // shrinkResources true // Resource shrinking (optional)
+            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' // ProGuard rules
         }
     }
 }
 
-// Flutter projesinin kök dizinini belirtir
+// Specifies the root directory of the Flutter project.
 flutter {
     source = "../.."
 }
 
-// Bağımlılıklar
+// Dependencies
 dependencies {
-    // Standart AndroidX kütüphaneleri
-    implementation "androidx.appcompat:appcompat:1.6.1"     // AppCompatActivity ve temalar için
-    implementation "androidx.core:core-ktx:1.10.1"           // Kotlin çekirdek uzantıları
-    // ---> ConstraintLayout Kütüphanesi (Layout için eklendi) <---
-    implementation "androidx.constraintlayout:constraintlayout:2.1.4" // Stabil versiyon 2.2.1 son sürüm
-    // ---> Core Library Desugaring Bağımlılığı (compileOptions'daki ayar için gerekli) <---
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // veya daha güncel bir versiyon
-    // Flutter ve plugin bağımlılıkları otomatik olarak eklenir
-    // implementation "..." // Diğer native bağımlılıklar buraya eklenebili
+    // Standard AndroidX libraries
+    implementation "androidx.appcompat:appcompat:1.6.1"     // For AppCompatActivity and themes
+    implementation "androidx.core:core-ktx:1.10.1"           // Kotlin core extensions
+    // ---> ConstraintLayout Library (Added for Layout) <---
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4" // Stable version 2.2.1 latest
+    // ---> Core Library Desugaring Dependency (Required for compileOptions setting) <---
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // or a newer version
+    // Flutter and plugin dependencies are added automatically.
+    // implementation "..." // Other native dependencies can be added here.
 
-    // ---> BU SATIRI EKLE: <---
-    implementation 'com.google.android.material:material:1.12.0' // (En güncel stabil versiyonu kontrol et)
+    // ---> ADD THIS LINE: <---
+    implementation 'com.google.android.material:material:1.12.0' // (Check for the latest stable version)
 
 
 }

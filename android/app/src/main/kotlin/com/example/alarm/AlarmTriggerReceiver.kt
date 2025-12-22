@@ -19,12 +19,12 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
             return
         }
 
-        // --- SADECE RingService'i Başlat ---
-        // Servis artık FullScreen Intent ile UI'ı tetikleyecek.
+        // --- Start ONLY RingService ---
+        // The service will now trigger the UI via FullScreen Intent.
         Log.d(TAG, "Starting RingService for ID: $alarmId")
         val serviceIntent = Intent(context, RingService::class.java).apply {
             action = RingService.ACTION_START
-            putExtra(RingService.EXTRA_ALARM_ID, alarmId) // Alarm ID'yi servise gönder
+            putExtra(RingService.EXTRA_ALARM_ID, alarmId) // Send Alarm ID to the service
         }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -37,16 +37,7 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
             Log.e(TAG, "Error starting RingService", e)
         }
 
-        // --- AlarmRingActivity'yi başlatma kodunu KALDIRDIK ---
-        /*
-        Log.d(TAG, "Starting AlarmRingActivity for ID: $alarmId")
-        val ringUiIntent = Intent(context, AlarmRingActivity::class.java).apply {
-            // ... flags and extras ...
-        }
-        context.startActivity(ringUiIntent)
-        */
-
-        // --- Tekrarlayan Alarmı Yeniden Kurma Mantığı (Hala geliştirilmeli) ---
+        // --- Logic to reschedule repeating alarm (Still under development) ---
         val isRepeating = intent.getBooleanExtra("IS_REPEATING", false)
         if (isRepeating) {
             Log.d(TAG, "Alarm ID $alarmId is repeating. Needs rescheduling (Not implemented here).")
@@ -55,7 +46,7 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
             Log.d(TAG, "Alarm ID $alarmId is one-shot.")
         }
 
-        Log.d(TAG, "onReceive finished for ID: $alarmId") // Receiver bitti logu
+        Log.d(TAG, "onReceive finished for ID: $alarmId") // Receiver finished log
     }
 
 }

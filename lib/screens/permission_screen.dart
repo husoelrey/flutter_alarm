@@ -1,4 +1,3 @@
-// lib/permission_screen.dart
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,7 +13,7 @@ class _PermissionScreenState extends State<PermissionScreen> {
   bool _isLoading = false;
 
   Future<bool> _isAndroid12OrHigher() async {
-    return true; // Modern cihazları varsayıyoruz
+    return true; // Assume modern devices
   }
 
   Future<void> _requestAndCheckPermissions() async {

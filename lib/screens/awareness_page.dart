@@ -10,7 +10,7 @@ class AwarenessPage extends StatelessWidget {
       "detail": '''
 📱 Mavi ışık melatonin hormonu üretimini %50'den fazla baskılar.
 
-• Yatmadan en az 60-90 dakika önce tüm ekranları bırakın.
+• Yatmadan en az 60-90 dakika önce ekranla olan bağınızı koparın.
 • İş veya ödev için mecbursanız: Gece modu + en düşük parlaklık + kırmızı filtre kullanın.
 • Telefon/tablet alırken OLED veya AMOLED ekranlı modelleri tercih edin; klasik LCD'lere göre 3-4 kat daha az mavi ışık yayarlar.
 • "Gece Modu" yazılımları sadece renk sıcaklığını değiştirir, parlaklık hâlâ retinaya zarar verir. En etkili çözüm: Mavi ışık kesici fiziksel gözlük + karanlık oda kombinasyonudur.

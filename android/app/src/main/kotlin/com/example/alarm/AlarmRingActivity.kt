@@ -31,7 +31,7 @@ class AlarmRingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate started")
 
-        // 🚀 Tam ekran ve ekran açma bayrakları
+        // 🚀 Full screen and screen turn-on flags
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 setShowWhenLocked(true)
@@ -48,7 +48,7 @@ class AlarmRingActivity : AppCompatActivity() {
             Log.e(TAG, "Error setting window flags", e)
         }
 
-        // 🔋 Ekranı uyandırmak için wakelock al
+        // 🔋 Acquire wakelock to wake up the screen
         try {
             val powerManager = getSystemService(POWER_SERVICE) as PowerManager
             wakeLock = powerManager.newWakeLock(
@@ -61,7 +61,7 @@ class AlarmRingActivity : AppCompatActivity() {
             Log.e(TAG, "Error acquiring wakelock", e)
         }
 
-        // 📄 XML layout yükle
+        // 📄 Load XML layout
         try {
             setContentView(R.layout.activity_alarm_ring)
             Log.d(TAG, "Layout activity_alarm_ring set")
@@ -91,10 +91,10 @@ class AlarmRingActivity : AppCompatActivity() {
             return
         }
 
-        // ✅ Tek seferlik alarmı pasifleştir
+        // ✅ Deactivate one-shot alarm
         deactivateOneShotAlarmInPrefs(alarmId)
 
-        // 🕒 Saat ve tarih gösterimi
+        // 🕒 Time and date display
         val currentTime = Date()
         val timeFormatter = SimpleDateFormat("HH:mm", Locale("tr", "TR"))
         val dateFormatter = SimpleDateFormat("d MMMM EEEE", Locale("tr", "TR"))
@@ -102,7 +102,7 @@ class AlarmRingActivity : AppCompatActivity() {
         textViewTime.text = timeFormatter.format(currentTime)
         textViewDate.text = dateFormatter.format(currentTime)
 
-        // 🏷️ Etiket varsa göster
+        // 🏷️ Display label if available
         val alarmLabel = getAlarmLabelFromPrefs(alarmId)
         if (!alarmLabel.isNullOrEmpty()) {
             textViewLabel.text = alarmLabel
@@ -112,7 +112,7 @@ class AlarmRingActivity : AppCompatActivity() {
             Log.d(TAG, "Label is null or empty, displaying ID.")
         }
 
-        // 🔕 Dismiss butonu → Flutter’a yönlendir
+        // 🔕 Dismiss button → Redirect to Flutter
         buttonDismiss.setOnClickListener {
             val flutterIntent = Intent(this, MainActivity::class.java).apply {
                 putExtra("route", "/memory")
