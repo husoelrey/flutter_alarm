@@ -23,8 +23,8 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
         // The service will now trigger the UI via FullScreen Intent.
         Log.d(TAG, "Starting RingService for ID: $alarmId")
         val serviceIntent = Intent(context, RingService::class.java).apply {
-            action = Constants.ACTION_START_RING
-            putExtra(Constants.EXTRA_ALARM_ID, alarmId) // Send Alarm ID to the service
+            action = RingService.ACTION_START // CORRECT ACTION
+            putExtra(RingService.EXTRA_ALARM_ID, alarmId) // Send Alarm ID to the service
         }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

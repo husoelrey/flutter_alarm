@@ -44,7 +44,15 @@ class RingService : Service() {
         startForeground(NOTIFICATION_ID, notification)
 
         when (action) {
-            ACTION_START -> startSound(alarmId)
+            ACTION_START -> {
+                startSound(alarmId)
+                // FORCE START the Activity to ensure the UI shows up immediately
+                val ringIntent = Intent(this, AlarmRingActivity::class.java).apply {
+                    putExtra("id", alarmId)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                }
+                startActivity(ringIntent)
+            }
             ACTION_STOP -> stopSoundAndService()
             else -> {
                 Log.w("RingService", "Unknown action: $action")
@@ -58,26 +66,53 @@ class RingService : Service() {
     private fun startSound(alarmId: Int) {
         stopSoundOnly() // Stop any previous sound
 
-        try {
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .build()
-                )
+        // 1. Try playing custom sound from SharedPreferences
+        val prefs = getSharedPreferences(Constants.ALARM_PREFS, MODE_PRIVATE)
+        val customPath = prefs.getString("soundPath_$alarmId", null)
+        Log.d("RingService", "Attempting to play sound for ID $alarmId. Custom path: $customPath")
 
-                // For now, using a fallback sound. Custom sound path can be added here.
-                val fallbackUri = Uri.parse("android.resource://$packageName/${R.raw.un}")
-                setDataSource(this@RingService, fallbackUri)
-                isLooping = true
-                prepare()
-                start()
-                Log.d("RingService", "MediaPlayer started for alarm ID: $alarmId")
+        try {
+            // Setup MediaPlayer logic
+            val mp = MediaPlayer()
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build()
+            )
+            
+            var dataSourceSet = false
+            
+            // Try custom path first
+            if (!customPath.isNullOrEmpty()) {
+                try {
+                    mp.setDataSource(customPath)
+                    dataSourceSet = true
+                    Log.d("RingService", "Custom sound data source set.")
+                } catch (e: Exception) {
+                    Log.e("RingService", "Failed to set custom data source. Reverting to fallback.", e)
+                    mp.reset() // Reset to clean state
+                }
             }
+            
+            // If custom failed or didn't exist, use fallback
+            if (!dataSourceSet) {
+                val fallbackUri = Uri.parse("android.resource://$packageName/${R.raw.un}")
+                mp.setDataSource(this@RingService, fallbackUri)
+                Log.d("RingService", "Fallback sound data source set.")
+            }
+
+            mp.isLooping = true
+            mp.prepare()
+            mp.start()
+            
+            mediaPlayer = mp // Assign to class variable only after success
+            Log.d("RingService", "MediaPlayer started successfully.")
+
         } catch (e: Exception) {
-            Log.e("RingService", "MediaPlayer setup failed", e)
-            stopSelf() // Stop service if sound cannot be played
+            Log.e("RingService", "CRITICAL: Failed to play ANY alarm sound.", e)
+            // Even if sound fails, we do NOT stop the service immediately.
+            // The UI should still show up so the user can see the alarm.
         }
     }
 
@@ -98,7 +133,8 @@ class RingService : Service() {
 
     private fun createNotification(alarmId: Int): Notification {
         val fullScreenIntent = Intent(this, AlarmRingActivity::class.java).apply {
-            putExtra("id", alarmId.toString())
+            // CRITICAL FIX: Pass ID as Int, NOT String. AlarmRingActivity uses getIntExtra.
+            putExtra("id", alarmId)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 
@@ -113,7 +149,7 @@ class RingService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Alarm is ringing!")
-            .setContentText("Alarm ID: $alarmId")
+            .setContentText("Tap to open alarm challenge")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)

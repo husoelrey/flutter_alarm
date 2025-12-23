@@ -46,9 +46,12 @@ object AlarmScheduler {
             return
         }
 
-        // Schedule the alarm
-        mgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pI)
-        Log.d(TAG, "Alarm scheduled -> ID=$id, time=$timeInMillis, repeating=$repeating")
+        // Schedule the alarm using setAlarmClock for maximum reliability
+        // This makes the alarm visible in the status bar and ensures it rings even in Doze mode.
+        val alarmClockInfo = AlarmManager.AlarmClockInfo(timeInMillis, pI)
+        mgr.setAlarmClock(alarmClockInfo, pI)
+        
+        Log.d(TAG, "Alarm scheduled using setAlarmClock -> ID=$id, time=$timeInMillis, repeating=$repeating")
     }
 
     /**

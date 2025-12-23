@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../data/alarm_model.dart';
 import '../../data/alarm_storage.dart';
 
@@ -139,8 +138,8 @@ class _AlarmEditDialogState extends State<AlarmEditDialog> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         ElevatedButton(
-          child: const Text('SAVE'),
           onPressed: _save,
+          child: const Text('SAVE'),
         ),
       ],
     );

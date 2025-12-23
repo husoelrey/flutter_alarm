@@ -59,9 +59,10 @@
             android:foregroundServiceType="mediaPlayback"/>
 
         <!-- ===== YENİ Receiver ===== -->
+        <!-- Make exported="true" so the system AlarmManager can definitely reach it -->
         <receiver
             android:name=".AlarmTriggerReceiver"
-            android:exported="false" />
+            android:exported="true" />
         <!-- ===== BİTTİ ===== -->
 
 

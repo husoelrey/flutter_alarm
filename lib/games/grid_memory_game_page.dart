@@ -4,8 +4,6 @@ import 'dart:math';
 import 'package:alarm/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 import '../services/native_channel_service.dart';
 

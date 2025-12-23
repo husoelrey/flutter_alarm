@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MotivationPage extends StatefulWidget {
+  const MotivationPage({super.key});
+
   @override
   _MotivationPageState createState() => _MotivationPageState();
 }

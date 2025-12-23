@@ -8,8 +8,8 @@ object Constants {
     const val ALARM_PREFS = "alarm_prefs"
     
     // Intent Actions
-    const val ACTION_START_RING = "com.example.alarm.ACTION_START_RING_SERVICE"
-    const val ACTION_STOP_RING = "com.example.alarm.ACTION_STOP_RING_SERVICE"
+    const val ACTION_START_RING = "com.example.alarm.ACTION_START_RING"
+    const val ACTION_STOP_RING = "com.example.alarm.ACTION_STOP_RING"
     
     // Extras Keys
     const val EXTRA_ALARM_ID = "ALARM_ID"
