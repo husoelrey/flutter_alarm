@@ -38,16 +38,19 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text,
       );
 
+      // Force manual login after registration
+      await FirebaseAuth.instance.signOut();
+
       // On success, navigate to the login page for the user to sign in.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please sign in.')),
+          const SnackBar(content: Text('Kayıt başarılı! Lütfen giriş yapın.')),
         );
         Navigator.of(context).pushReplacementNamed('/login');
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = e.message ?? "An unknown error occurred.";
+        _errorMessage = e.message ?? "Bilinmeyen bir hata oluştu.";
       });
     } finally {
       if (mounted) {
@@ -71,7 +74,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Create Account 🚀',
+                    'Hesap Oluştur 🚀',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
@@ -83,14 +86,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: _buildInputDecoration(label: 'Email'),
+                    decoration: _buildInputDecoration(label: 'E-posta'),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: _buildInputDecoration(label: 'Password'),
+                    decoration: _buildInputDecoration(label: 'Şifre'),
                     textInputAction: TextInputAction.done,
                     onEditingComplete: _register,
                   ),
@@ -112,14 +115,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text('Register', style: TextStyle(fontSize: 16)),
+                      child: const Text('Kayıt Ol', style: TextStyle(fontSize: 16)),
                     ),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pushReplacementNamed('/login');
                     },
                     child: const Text(
-                      'Already have an account? Sign In',
+                      'Zaten hesabın var mı? Giriş Yap',
                       style: TextStyle(color: Colors.white70),
                     ),
                   ),

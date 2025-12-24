@@ -17,6 +17,10 @@ class MainActivity : FlutterActivity() {
     private val NATIVE_CHANNEL = Constants.CHANNEL_ID
     private val TAG = "MainActivity"
 
+    // Pending navigation state
+    private var pendingRoute: String? = null
+    private var pendingAlarmId: Int = -1
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         flutterEngineRef = flutterEngine
@@ -24,6 +28,26 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NATIVE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+
+                    "checkPendingNavigation" -> {
+                        if (pendingRoute != null && pendingAlarmId != -1) {
+                            val data = mapOf(
+                                "route" to pendingRoute,
+                                "alarmId" to pendingAlarmId
+                            )
+                            // Clear after reading? Maybe better to keep until handled, 
+                            // but for now let's clear to avoid loops if called multiple times.
+                            // Actually, let's NOT clear here, let Flutter handle it and we clear 
+                            // when we receive a confirmation or just assume it's done.
+                            // Better: Return and clear.
+                            val response = data
+                            pendingRoute = null
+                            pendingAlarmId = -1
+                            result.success(response)
+                        } else {
+                            result.success(null)
+                        }
+                    }
 
                     "restartAlarmFromFlutter" -> {
                         val id = call.argument<Int>("alarmId") ?: -1
@@ -94,12 +118,29 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent(intent)
+    }
 
-        val route = intent?.getStringExtra("route")
-        val alarmId = intent?.getIntExtra("alarmId", -1) ?: -1
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent == null) return
+
+        val route = intent.getStringExtra("route")
+        val alarmId = intent.getIntExtra("alarmId", -1)
 
         // Handle navigation requests from native notification actions
-        if (alarmId != -1) {
+        if (alarmId != -1 && route != null) {
+            Log.d(TAG, "handleIntent -> route=$route, ID=$alarmId")
+            
+            // 1. Store for "Pull" (checkPendingNavigation)
+            pendingRoute = route
+            pendingAlarmId = alarmId
+
+            // 2. Try "Push" (invokeMethod) immediately
             when (route) {
                 "/typing" -> {
                     Log.d(TAG, "openTypingPage -> ID=$alarmId")

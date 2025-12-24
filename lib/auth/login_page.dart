@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = e.message ?? "An unknown error occurred.";
+        _errorMessage = e.message ?? "Bilinmeyen bir hata oluştu.";
       });
     } finally {
       if (mounted) {
@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Welcome Back 🔐',
+                    'Tekrar Hoşgeldiniz 🔐',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
@@ -81,14 +81,14 @@ class _LoginPageState extends State<LoginPage> {
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: _buildInputDecoration(label: 'Email'),
+                    decoration: _buildInputDecoration(label: 'E-posta'),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: _buildInputDecoration(label: 'Password'),
+                    decoration: _buildInputDecoration(label: 'Şifre'),
                     textInputAction: TextInputAction.done,
                     onEditingComplete: _signIn,
                   ),
@@ -110,14 +110,14 @@ class _LoginPageState extends State<LoginPage> {
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text('Sign In', style: TextStyle(fontSize: 16)),
+                      child: const Text('Giriş Yap', style: TextStyle(fontSize: 16)),
                     ),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pushNamed('/register');
                     },
                     child: const Text(
-                      'Don\'t have an account? Register',
+                      'Hesabın yok mu? Kayıt Ol',
                       style: TextStyle(color: Colors.white70),
                     ),
                   ),

@@ -69,11 +69,11 @@ class _AlarmEditDialogState extends State<AlarmEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final List<String> dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
     return AlertDialog(
       title: Center(
-        child: Text(widget.initialAlarm == null ? 'Set New Alarm' : 'Edit Alarm'),
+        child: Text(widget.initialAlarm == null ? 'Yeni Alarm Kur' : 'Alarmı Düzenle'),
       ),
       contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 0),
       content: SingleChildScrollView(
@@ -97,7 +97,7 @@ class _AlarmEditDialogState extends State<AlarmEditDialog> {
             TextField(
               controller: _labelController,
               decoration: const InputDecoration(
-                labelText: 'Label (Optional)',
+                labelText: 'Etiket (İsteğe Bağlı)',
                 prefixIcon: Icon(Icons.label_outline),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12))),
@@ -105,7 +105,7 @@ class _AlarmEditDialogState extends State<AlarmEditDialog> {
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 16),
-            Text('Repeat Days:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Tekrarlanacak Günler:', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8.0,
@@ -134,12 +134,12 @@ class _AlarmEditDialogState extends State<AlarmEditDialog> {
       ),
       actions: <Widget>[
         TextButton(
-          child: const Text('CANCEL'),
+          child: const Text('İPTAL'),
           onPressed: () => Navigator.of(context).pop(),
         ),
         ElevatedButton(
           onPressed: _save,
-          child: const Text('SAVE'),
+          child: const Text('KAYDET'),
         ),
       ],
     );

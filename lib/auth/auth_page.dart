@@ -36,6 +36,21 @@ class _AuthPageState extends State<AuthPage> {
       } else {
         await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email, password: password);
+        
+        // Force manual login after registration
+        await FirebaseAuth.instance.signOut();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kayıt başarılı! Lütfen giriş yapın.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {
+             _isLogin = true;
+          });
+        }
       }
       // Navigation is now handled automatically by the StreamBuilder in SplashPage.
 
@@ -45,7 +60,7 @@ class _AuthPageState extends State<AuthPage> {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message ?? "An unknown authentication error occurred."),
+            content: Text(e.message ?? "Bilinmeyen bir hata oluştu."),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -78,7 +93,7 @@ class _AuthPageState extends State<AuthPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _isLogin ? '🔐 Sign In' : '🚀 Register',
+                    _isLogin ? '🔐 Giriş Yap' : '🚀 Kayıt Ol',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 26,
@@ -90,14 +105,14 @@ class _AuthPageState extends State<AuthPage> {
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: _buildInputDecoration(label: 'Email'),
+                    decoration: _buildInputDecoration(label: 'E-posta'),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: _buildInputDecoration(label: 'Password'),
+                    decoration: _buildInputDecoration(label: 'Şifre'),
                     textInputAction: TextInputAction.done,
                     onEditingComplete: _submit,
                   ),
@@ -112,7 +127,7 @@ class _AuthPageState extends State<AuthPage> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: _submit,
-                      child: Text(_isLogin ? 'Sign In' : 'Register'),
+                      child: Text(_isLogin ? 'Giriş Yap' : 'Kayıt Ol'),
                     ),
                   TextButton(
                     onPressed: () {
@@ -121,8 +136,8 @@ class _AuthPageState extends State<AuthPage> {
                     },
                     child: Text(
                       _isLogin
-                          ? 'Don\'t have an account? Register'
-                          : 'Already have an account? Sign In',
+                          ? 'Hesabın yok mu? Kayıt Ol'
+                          : 'Zaten hesabın var mı? Giriş Yap',
                     ),
                   ),
                 ],

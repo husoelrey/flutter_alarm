@@ -41,7 +41,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Alarm sound saved')),
+          const SnackBar(content: Text('Alarm sesi kaydedildi')),
         );
       }
     }
@@ -83,7 +83,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Alarm ${existingAlarmIndex(alarm.id) != -1 ? 'updated' : 'set'} for: ${DateFormat('dd MMM HH:mm', 'tr_TR').format(alarm.dateTime)}'),
+                'Alarm ${DateFormat('dd MMM HH:mm', 'tr_TR').format(alarm.dateTime)} için ${existingAlarmIndex(alarm.id) != -1 ? 'güncellendi' : 'kuruldu'}'),
           ),
         );
       }
@@ -91,7 +91,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
       debugPrint("Failed to save alarm: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to set alarm. Please try again.')),
+          const SnackBar(content: Text('Alarm kurulamadı. Lütfen tekrar dene.')),
         );
       }
     }
@@ -107,7 +107,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
       debugPrint("Failed to toggle alarm: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update alarm status.')),
+          const SnackBar(content: Text('Alarm durumu güncellenemedi.')),
         );
       }
     }
@@ -119,7 +119,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
       setState(() => _alarms = updatedAlarms);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Alarm deleted')),
+          const SnackBar(content: Text('Alarm silindi')),
         );
       }
     } catch (e) {
@@ -132,13 +132,13 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Alarms'),
+        title: const Text('Alarmlarım'),
         // AppColors.surface is already set in main.dart theme, but explicit here for clarity if needed
         backgroundColor: AppColors.surface, 
         actions: [
           IconButton(
             icon: const Icon(Icons.add_alarm, color: AppColors.primary),
-            tooltip: 'Add New Alarm',
+            tooltip: 'Yeni Alarm Ekle',
             onPressed: () => _showAddEditAlarmDialog(),
           ),
         ],
@@ -149,7 +149,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
           ElevatedButton.icon(
             onPressed: _pickAndSaveSound,
             icon: const Icon(Icons.music_note),
-            label: const Text("Select Alarm Sound"),
+            label: const Text("Alarm Sesi Seç"),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.surface,
               foregroundColor: AppColors.primary,
@@ -164,7 +164,7 @@ class _AlarmHomePageState extends State<AlarmHomePage> {
                 : _alarms.isEmpty
                     ? const Center(
                         child: Text(
-                          'No alarms yet.\nTap the + icon to add one.',
+                          'Henüz alarm yok.\nEklemek için + ikonuna dokun.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
@@ -213,7 +213,7 @@ class AlarmListItem extends StatelessWidget {
     String nextTimeString;
 
     if (!alarm.isActive) {
-      nextTimeString = "Inactive";
+      nextTimeString = "Kapalı";
     } else {
       final isToday = now.year == nextOccurrence.year &&
           now.month == nextOccurrence.month &&
@@ -221,9 +221,9 @@ class AlarmListItem extends StatelessWidget {
       final isTomorrow = now.add(const Duration(days: 1)).day == nextOccurrence.day;
 
       if (isToday) {
-        nextTimeString = 'Today, ${DateFormat('HH:mm').format(nextOccurrence)}';
+        nextTimeString = 'Bugün, ${DateFormat('HH:mm').format(nextOccurrence)}';
       } else if (isTomorrow) {
-        nextTimeString = 'Tomorrow, ${DateFormat('HH:mm').format(nextOccurrence)}';
+        nextTimeString = 'Yarın, ${DateFormat('HH:mm').format(nextOccurrence)}';
       } else {
         nextTimeString =
             DateFormat('dd MMM E, HH:mm', 'tr_TR').format(nextOccurrence);
@@ -286,18 +286,18 @@ class AlarmListItem extends StatelessWidget {
           builder: (BuildContext context) {
             return AlertDialog(
               backgroundColor: AppColors.surface,
-              title: const Text('Delete Alarm?', style: TextStyle(color: AppColors.textPrimary)),
+              title: const Text('Alarmı Sil?', style: TextStyle(color: AppColors.textPrimary)),
               content: Text(
-                  'Are you sure you want to permanently delete this alarm for ${DateFormat('HH:mm').format(alarm.dateTime)}?',
+                  '${DateFormat('HH:mm').format(alarm.dateTime)} için olan bu alarmı kalıcı olarak silmek istediğine emin misin?',
                   style: const TextStyle(color: AppColors.textSecondary)),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('CANCEL', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text('İPTAL', style: TextStyle(color: AppColors.textSecondary)),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('DELETE', style: TextStyle(color: AppColors.error)),
+                  child: const Text('SİL', style: TextStyle(color: AppColors.error)),
                 ),
               ],
             );

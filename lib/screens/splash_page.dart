@@ -2,14 +2,28 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:alarm/presentation/screens/main_shell.dart';
 import 'package:alarm/auth/auth_page.dart';
+import 'package:alarm/services/native_channel_service.dart';
 
 /// Acts as a gatekeeper for the app's authentication state.
 ///
 /// This widget listens to Firebase's `authStateChanges` stream and decides
 /// whether to show the main application (`MainShell`) or the `AuthPage` based
 /// on whether a user is currently signed in.
-class SplashPage extends StatelessWidget {
+class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
+
+  @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  
+  @override
+  void initState() {
+    super.initState();
+    // Check if we need to navigate to a game immediately
+    checkPendingNavigation();
+  }
 
   @override
   Widget build(BuildContext context) {

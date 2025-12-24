@@ -37,15 +37,15 @@ class _MainShellState extends State<MainShell> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.access_alarm),
-            label: 'Alarms',
+            label: 'Alarmlar',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.format_quote),
-            label: 'Motivation',
+            label: 'Motivasyon',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.psychology),
-            label: 'Awareness',
+            label: 'Farkındalık',
           ),
         ],
       ),
