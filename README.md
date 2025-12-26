@@ -1,97 +1,57 @@
 # ⏰ Flutter Alarm Uygulaması
-Kullanıcıyı tek seferde uyandırmak için tasarlanmış, modern bir **alarm uygulaması**. **Erteleme tuşu içermeyen** yapısı ve uyanma görevleriyle klasik alarm uygulamalarından ayrılır. Uygulamanın amacı sadece uyandırmak değil; aynı zamanda güne zihinsel olarak hazır başlamanı sağlamak.
+
+Kullanıcıyı tek seferde uyandırmak için tasarlanmış, modern ve görev odaklı bir **alarm uygulaması**. **Erteleme tuşu içermeyen** yapısı ve uyanma görevleriyle klasik alarm uygulamalarından ayrılır. Uygulamanın amacı sadece uyandırmak değil; aynı zamanda güne zihinsel olarak hazır başlamanızı sağlamaktır.
 
 ## 🚀 Özellikler
 
-- 🔔 **Alarm Kurma:** Tek seferlik veya tekrar eden alarmlar oluşturabilirsiniz.
-- 📱 **Flutter ↔ Native Entegrasyonu:** Android sistem alarmı doğrudan native (Kotlin) kod ile tetiklenir.
-- 🧠 **Uyanma Görevleri:** Alarmı kapatmak için kullanıcıyı zihinsel olarak aktif hâle getiren mini görevler:
-    - Hafıza oyunu (kareleri ezberle ve bul)
-    - Yazıları tekrar yaz (motivasyon cümlelerini eksiksiz yaz)
-- 🗝️ **Tam Ekran Alarm:** Alarm çaldığında ekran uyanır ve doğrudan RingActivity (Kotlin) açılır.
-- 🔐 **Firebase Authentication:** Kullanıcılar e‑posta ve şifre ile giriş yapabilir.
-- 💭 **Motivasyon Sayfası:** Uygulama içinde düzenlenebilir motivasyon cümleleri saklanır.
-- 🌙 **Uyku Farkındalığı Sayfası:** Uyku kalitesini artırmaya yönelik bilimsel bilgiler ve öneriler içerir.
-- ✅ **İzin Kontrolü ve Yönlendirme:** Alarm çalışabilmesi için gerekli Android izinleri başta istenir.
-- 🧠 **REM ve Derin Uyku Bilgilendirmesi:** Uykunun biyolojik döngüleri hakkında farkındalık sağlar.
-- ☁️ **Firebase ile Veri Senkronizasyonu (opsiyonel):** Giriş yapan kullanıcılar farklı cihazlarda senkronize olabilir (geliştirmeye açık).
+- 🔔 **Alarm Yönetimi:** Tek seferlik veya haftanın belirli günleri için tekrar eden alarmlar oluşturun, düzenleyin ve silin.
+- 🎵 **Özelleştirilebilir Ses:** Cihaz hafızasından kendi alarm sesinizi seçin.
+- 🧠 **Uyanma Görevleri:** Alarmı kapatmak için kullanıcıyı zihinsel olarak aktif hâle getiren zorunlu mini görevler:
+  - **Hafıza Oyunu:** Belirlenen süre içinde yanan kareleri ezberleyip doğru şekilde bulun.
+  - **Yazı Yazma Görevi:** Ekranda çıkan motivasyon cümlelerini hatasız bir şekilde yeniden yazın.
+- 📱 **Flutter ↔ Native Entegrasyonu:** Android alarm yöneticisi, doğrudan native (Kotlin) kod ile entegre çalışarak güvenilir bir şekilde alarmı tetikler.
+- 🚪 **Tam Ekran Alarm ve Kilit Ekranı Desteği:** Alarm çaldığında, uygulama kapalı veya kilitli olsa bile ekranı uyandırır ve tam ekran olarak alarm görevini başlatır.
+- 🔐 **Firebase Authentication:** Kullanıcıların e-posta ve şifre ile güvenli bir şekilde kaydolmasını ve giriş yapmasını sağlar.
+- 💭 **Motivasyon Modülü:** Uygulama içinden görüntülenebilen ve eklenebilen kişisel motivasyon cümleleri.
+- 🌙 **Uyku Farkındalığı Modülü:** Uyku kalitesini artırmaya yönelik bilimsel bilgiler, biyolojik döngüler (REM, derin uyku) ve pratik öneriler içerir.
+- ✅ **İzin Yönetimi:** Alarmın sorunsuz çalışabilmesi için gerekli olan Android izinlerini (bildirim, tam ekran gösterme vb.) başlangıçta kontrol eder ve kullanıcıyı yönlendirir.
 
 ## 🔧 Kullanılan Teknolojiler
 
-- **Flutter & Dart**
-- **Kotlin (Native Android Alarm)**
-- **Firebase (Authentication)**
-- **Shared Preferences** (lokal veri saklama)
-- **Flutter Local Notifications**
-- **Permission Handler**
-- **Android Alarm Manager Plus** (yalnızca örnekler için)
+- **Flutter & Dart** (UI ve iş mantığı)
+- **Kotlin** (Native Android alarm servisi, broadcast receiver ve tam ekran activity için)
+- **Firebase Authentication** (Kullanıcı kimlik doğrulama)
+- **Provider** (State management)
+- **Shared Preferences** (Lokal veri saklama - alarm sesi vb.)
+- **Flutter Local Notifications** (Anlık bildirimler)
+- **Permission Handler** (İzin yönetimi)
+- **MethodChannel** (Flutter ve Native kod arasında iletişim için)
 
-## 📲 Ekran Görüntüleri
+## 📁 Proje Yapısı
 
-### Ana Sayfa
-![Ana Sayfa](screenshots/1_home.jpg)
+Proje, yeniden kullanılabilirlik ve sürdürülebilirlik için modüler bir mimariyle tasarlandı. Ana dizinler ve sorumlulukları:
 
-### Motivasyon Ekleme
-![Motivasyon Ekleme](screenshots/2_add_motivations.jpg)
-
-### Farkındalık Listesi
-![Farkındalıklar](screenshots/3_awarenesses.jpg)
-
-### Farkındalık Detayı
-![Farkındalık Detay](screenshots/4_awareness_details.jpg)
-
-### Hafıza Oyunu
-![Hafıza Oyunu](screenshots/5_memory_game.jpg)
-
-### Motivasyon Yazma Görevi
-![Yazı Görevi](screenshots/6_motivation_typing.jpg)
-
----
-## 📌 Bilimsel Temelli Farkındalıklar
-- Uygulama içeriği, uyku kalitesini artırmak ve sağlıklı alışkanlıklar kazandırmak için seçilmiş bilimsel öneriler içerir.
-- Her içerik kısa bir özetle başlar, detay ekranında anlaşılır ve teknik bilgiler sunar.
+- **`lib/`**: Dart kodlarının bulunduğu ana dizin.
+  - **`main.dart`**: Uygulamanın başlangıç noktası. Tema, yollar (routes) ve native kanal dinleyicisi burada yapılandırılır.
+  - **`auth/`**: Firebase Authentication ile ilgili tüm mantığı (kayıt, giriş, durum yönetimi) içerir.
+  - **`data/`**: Uygulamanın veri katmanıdır. `alarm_model.dart` (veri modeli), `alarm_repository.dart` (veri işlemleri) ve `alarm_storage.dart` (lokal depolama) dosyalarını barındırır.
+  - **`games/`**: Alarmı kapatmak için kullanılan görev/oyun ekranlarını içerir (`grid_memory_game_page.dart`, `motivation_typing_page.dart`).
+  - **`presentation/`**: Kullanıcı arayüzü katmanıdır.
+    - `screens/`: Uygulamanın ana ekranlarını (`alarm_home_page.dart`, `main_shell.dart`) içerir.
+    - `widgets/`: Birden fazla ekranda kullanılan ortak widget'ları (`alarm_edit_dialog.dart`) barındırır.
+  - **`screens/`**: Farkındalık, izinler gibi daha statik veya tekil ekranları içerir.
+  - **`services/`**: Native kod (Kotlin) ile iletişimi sağlayan `native_channel_service.dart` gibi servisleri içerir.
+  - **`theme/`**: Uygulamanın renk paleti (`app_colors.dart`) ve genel teması gibi stil dosyalarını barındırır.
 
 ## 🛠️ Kurulum
 
-1. Firebase projesi oluştur ve Android'i ekle.
-2. `google-services.json` dosyasını `android/app/` klasörüne yerleştir.
-3. `flutter pub get` çalıştır.
-4. Android telefon bağlayarak `flutter run`.
-
-## 📁 Dizin Yapısı (Özet)
-- lib/
-- ├── main.dart                   # Uygulama başlatıcısı, native handler’lar
-- ├── motivation_page.dart        # Motivasyon listesi
-- ├── motivation_typing_page.dart # Yazı yazma görevi
-- ├── grid_memory_game_page.dart  # Hafıza oyunu
-- ├── good_morning.dart           # Uyanış sonrası ekran
-- ├── login_page.dart             # Giriş ekranı
-- ├── awareness_page.dart         # Uyku farkındalığı sayfası
-- └── permission_screen.dart      # Android izinleri
-
-
-
-## 🧪 Test Notları
-
-- Alarm, Android 8+ cihazlarda test edilmiştir.
-- Uygulama, kilit ekranında tam ekran açılabilmektedir.
-- Firebase yapılandırması doğru yapılmazsa uygulama açılmaz, hata verir.
-
-## 🔐 Kimlik Doğrulama
-- Kullanıcı kayıtları Firebase Authentication ile tutulur.
-
-- Yeni kullanıcılar mail/şifre ile kayıt olur, giriş yapabilir.
-
-- Oturum açık kalır, uygulama açılışında kullanıcı durumuna göre yönlendirme yapılır.
-
-
-## 📄 Lisans
-Dilediğiniz gibi kullanabilir ve geliştirebilirsiniz.
+1.  Yeni bir Firebase projesi oluşturun ve projenize Android uygulamasını ekleyin.
+2.  Firebase konsolundan `google-services.json` dosyasını indirin ve projenizin `android/app/` dizinine kopyalayın.
+3.  Bir terminalde `flutter pub get` komutunu çalıştırarak bağımlılıkları yükleyin.
+4.  Uygulamayı bir Android cihaz veya emülatör üzerinde `flutter run` komutu ile başlatın.
 
 ---
 
 ## Hazırlayan: [Hüseyin Erekmen]
 - https://github.com/husoelrey
 - https://www.linkedin.com/in/huseyinerekmen/
-
-
